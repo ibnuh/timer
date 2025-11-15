@@ -11,6 +11,7 @@ export interface Settings {
   theme: 'light' | 'dark'
   soundEnabled: boolean
   silentOnTabOpen: boolean
+  confirmBeforeClose: boolean
   customPresets: TimerPreset[]
 }
 
@@ -19,6 +20,7 @@ export const useSettingsStore = defineStore('settings', () => {
     theme: 'light',
     soundEnabled: true,
     silentOnTabOpen: false,
+    confirmBeforeClose: true,
     customPresets: [],
   })
 
@@ -52,6 +54,11 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const setSilentOnTabOpen = (silent: boolean) => {
     settings.value.silentOnTabOpen = silent
+    saveSettings()
+  }
+
+  const setConfirmBeforeClose = (confirm: boolean) => {
+    settings.value.confirmBeforeClose = confirm
     saveSettings()
   }
 
@@ -126,6 +133,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setTheme,
     setSoundEnabled,
     setSilentOnTabOpen,
+    setConfirmBeforeClose,
     addCustomPreset,
     removeCustomPreset,
     updateCustomPreset,

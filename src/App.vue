@@ -190,9 +190,22 @@ onMounted(() => {
     updateTabTitle()
   }, 100)
   
+  // Handle beforeunload confirmation
+  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (settingsStore.settings.confirmBeforeClose) {
+      e.preventDefault()
+      // Modern browsers require returnValue to be set
+      e.returnValue = ''
+      return ''
+    }
+  }
+  
+  window.addEventListener('beforeunload', handleBeforeUnload)
+  
   // Cleanup on unmount
   onUnmounted(() => {
     clearInterval(titleInterval)
+    window.removeEventListener('beforeunload', handleBeforeUnload)
   })
 })
 
