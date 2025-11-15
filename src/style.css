@@ -109,5 +109,16 @@
   .glow-pulse {
     animation: glow-pulse 1s ease-in-out infinite;
   }
+  
+  /* Hide number input spinners */
+  .timer-input {
+    -moz-appearance: textfield;
+  }
+  
+  .timer-input::-webkit-outer-spin-button,
+  .timer-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 

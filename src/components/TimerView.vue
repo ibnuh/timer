@@ -156,41 +156,112 @@
 
       <!-- Time Input Controls -->
       <div class="grid grid-cols-3 gap-4 mb-6">
-        <div>
-          <label class="block text-sm font-semibold mb-2 text-foreground">Hours</label>
-          <input
-            v-model.number="hours"
-            type="number"
-            min="0"
-            max="23"
-            class="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
-            :disabled="isRunning"
-            @input="updateTime"
-          />
+        <!-- Hours -->
+        <div class="flex flex-col">
+          <label class="block text-xs font-semibold mb-2 text-foreground/70 uppercase tracking-wide text-center">Hours</label>
+          <div class="relative flex flex-col">
+            <button
+              @click="adjustHours(1)"
+              :disabled="isRunning || hours >= 23"
+              class="flex items-center justify-center h-8 rounded-t-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-b-0 border-input"
+              type="button"
+            >
+              <svg class="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+              </svg>
+            </button>
+            <input
+              v-model.number="hours"
+              type="number"
+              min="0"
+              max="23"
+              class="timer-input w-full px-3 py-4 rounded-none border-x-2 border-input bg-background text-center text-3xl font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="isRunning"
+              @input="updateTime"
+            />
+            <button
+              @click="adjustHours(-1)"
+              :disabled="isRunning || hours <= 0"
+              class="flex items-center justify-center h-8 rounded-b-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-t-0 border-input"
+              type="button"
+            >
+              <svg class="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-2 text-muted-foreground">Minutes</label>
-          <input
-            v-model.number="minutes"
-            type="number"
-            min="0"
-            max="59"
-            class="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
-            :disabled="isRunning"
-            @input="updateTime"
-          />
+
+        <!-- Minutes -->
+        <div class="flex flex-col">
+          <label class="block text-xs font-semibold mb-2 text-foreground/70 uppercase tracking-wide text-center">Minutes</label>
+          <div class="relative flex flex-col">
+            <button
+              @click="adjustMinutes(1)"
+              :disabled="isRunning || minutes >= 59"
+              class="flex items-center justify-center h-8 rounded-t-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-b-0 border-input"
+              type="button"
+            >
+              <svg class="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+              </svg>
+            </button>
+            <input
+              v-model.number="minutes"
+              type="number"
+              min="0"
+              max="59"
+              class="timer-input w-full px-3 py-4 rounded-none border-x-2 border-input bg-background text-center text-3xl font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="isRunning"
+              @input="updateTime"
+            />
+            <button
+              @click="adjustMinutes(-1)"
+              :disabled="isRunning || minutes <= 0"
+              class="flex items-center justify-center h-8 rounded-b-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-t-0 border-input"
+              type="button"
+            >
+              <svg class="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-2 text-muted-foreground">Seconds</label>
-          <input
-            v-model.number="seconds"
-            type="number"
-            min="0"
-            max="59"
-            class="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
-            :disabled="isRunning"
-            @input="updateTime"
-          />
+
+        <!-- Seconds -->
+        <div class="flex flex-col">
+          <label class="block text-xs font-semibold mb-2 text-foreground/70 uppercase tracking-wide text-center">Seconds</label>
+          <div class="relative flex flex-col">
+            <button
+              @click="adjustSeconds(1)"
+              :disabled="isRunning || seconds >= 59"
+              class="flex items-center justify-center h-8 rounded-t-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-b-0 border-input"
+              type="button"
+            >
+              <svg class="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+              </svg>
+            </button>
+            <input
+              v-model.number="seconds"
+              type="number"
+              min="0"
+              max="59"
+              class="timer-input w-full px-3 py-4 rounded-none border-x-2 border-input bg-background text-center text-3xl font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="isRunning"
+              @input="updateTime"
+            />
+            <button
+              @click="adjustSeconds(-1)"
+              :disabled="isRunning || seconds <= 0"
+              class="flex items-center justify-center h-8 rounded-b-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-t-0 border-input"
+              type="button"
+            >
+              <svg class="w-4 h-4 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -427,6 +498,24 @@ const updateTime = () => {
   if (minutes.value > 59) minutes.value = 59
   if (seconds.value > 59) seconds.value = 59
   if (hours.value > 23) hours.value = 23
+}
+
+const adjustHours = (delta: number) => {
+  if (isRunning.value) return
+  hours.value = Math.max(0, Math.min(23, hours.value + delta))
+  updateTime()
+}
+
+const adjustMinutes = (delta: number) => {
+  if (isRunning.value) return
+  minutes.value = Math.max(0, Math.min(59, minutes.value + delta))
+  updateTime()
+}
+
+const adjustSeconds = (delta: number) => {
+  if (isRunning.value) return
+  seconds.value = Math.max(0, Math.min(59, seconds.value + delta))
+  updateTime()
 }
 
 const addTime = (additionalSeconds: number) => {
