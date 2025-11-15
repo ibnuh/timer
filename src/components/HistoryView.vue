@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-3">
     <!-- History -->
-    <div class="bg-card rounded-lg p-4 shadow-sm border border-border/20">
+    <div class="p-4">
       <div class="flex justify-between items-center mb-2">
         <h2 class="text-sm font-bold">History</h2>
         <button

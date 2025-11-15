@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <div class="bg-card rounded-lg p-6 shadow-sm border border-border/20">
+    <div class="p-6">
       <!-- Circular Timer Display -->
       <div class="flex flex-col items-center mb-6">
         <div
@@ -180,7 +180,7 @@
       </div>
 
       <!-- Settings -->
-      <div class="pt-4 border-t border-border/20">
+      <div class="pt-4 border-t border-border/40">
         <div class="flex items-center justify-between text-sm mb-3">
           <label class="flex items-center gap-2 cursor-pointer">
             <input
