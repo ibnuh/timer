@@ -2,7 +2,7 @@
   <div class="h-screen bg-background overflow-hidden flex flex-col">
     <!-- Compact Header -->
     <header class="flex items-center justify-between px-4 py-2 border-b border-border/20">
-      <h1 class="text-xl font-bold">Timer & Stopwatch</h1>
+      <h1 class="text-xl font-bold">Timer</h1>
       <div class="flex gap-2 items-center">
         <button
           @click="showHistory = !showHistory"
@@ -106,38 +106,11 @@
 
     <!-- Main Content Area -->
     <div class="flex-1 overflow-hidden grid grid-cols-1 gap-3 p-3" :class="showHistory ? 'lg:grid-cols-3' : 'lg:grid-cols-1'">
-      <!-- Left: Timer/Stopwatch -->
+      <!-- Timer -->
       <div :class="showHistory ? 'lg:col-span-2' : 'lg:col-span-1'" class="flex flex-col overflow-hidden min-h-0">
-        <!-- Tab Switcher -->
-        <div class="flex gap-2 mb-2">
-          <button
-            @click="activeTab = 'timer'"
-            :class="[
-              'px-4 py-1.5 rounded-md text-sm font-medium transition-all',
-              activeTab === 'timer'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-secondary/50 text-secondary-foreground hover:bg-secondary',
-            ]"
-          >
-            Timer
-          </button>
-          <button
-            @click="activeTab = 'stopwatch'"
-            :class="[
-              'px-4 py-1.5 rounded-md text-sm font-medium transition-all',
-              activeTab === 'stopwatch'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-secondary/50 text-secondary-foreground hover:bg-secondary',
-            ]"
-          >
-            Stopwatch
-          </button>
-        </div>
-
-        <!-- Timer/Stopwatch View -->
+        <!-- Timer View -->
         <div class="flex-1 overflow-hidden min-h-0">
-          <TimerView v-if="activeTab === 'timer'" ref="timerRef" />
-          <StopwatchView v-else ref="stopwatchRef" />
+          <TimerView ref="timerRef" />
         </div>
       </div>
 
@@ -153,36 +126,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useSettingsStore } from './stores/settings'
 import TimerView from './components/TimerView.vue'
-import StopwatchView from './components/StopwatchView.vue'
 import HistoryView from './components/HistoryView.vue'
 import SettingsPopup from './components/SettingsPopup.vue'
 
-const activeTab = ref<'timer' | 'stopwatch'>('timer')
 const settingsStore = useSettingsStore()
 const isDark = ref(false)
 const showHistory = ref(true)
 const showSettings = ref(false)
 
 const timerRef = ref<InstanceType<typeof TimerView> | null>(null)
-const stopwatchRef = ref<InstanceType<typeof StopwatchView> | null>(null)
 
-// Update tab title with timer/stopwatch time
+// Update tab title with timer time
 const updateTabTitle = () => {
-  const baseTitle = 'Timer & Stopwatch'
+  const baseTitle = 'Timer'
   
-  if (activeTab.value === 'timer' && timerRef.value) {
+  if (timerRef.value) {
     const { formattedTime, isRunning, isPaused } = timerRef.value
     if (isRunning || isPaused) {
-      document.title = `${formattedTime} - ${baseTitle}`
-    } else {
-      document.title = baseTitle
-    }
-  } else if (activeTab.value === 'stopwatch' && stopwatchRef.value) {
-    const { formattedTime, isRunning, elapsedTime } = stopwatchRef.value
-    if (isRunning || elapsedTime > 0) {
       document.title = `${formattedTime} - ${baseTitle}`
     } else {
       document.title = baseTitle
@@ -206,7 +169,7 @@ onMounted(() => {
     document.documentElement.classList.remove('dark')
   }
   
-  // Update tab title periodically when timer/stopwatch is running
+  // Update tab title periodically when timer is running
   const titleInterval = setInterval(() => {
     updateTabTitle()
   }, 100)
@@ -215,10 +178,6 @@ onMounted(() => {
   onUnmounted(() => {
     clearInterval(titleInterval)
   })
-})
-
-watch(activeTab, () => {
-  updateTabTitle()
 })
 
 const toggleTheme = () => {
