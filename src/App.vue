@@ -5,7 +5,7 @@
       <h1 class="text-xl font-bold text-foreground">Timer</h1>
       <div class="flex gap-2 items-center">
         <button
-          @click="showHistory = !showHistory"
+          @click="toggleHistory"
           class="p-1.5 rounded-md hover:bg-secondary transition-colors"
           :aria-label="showHistory ? 'Hide history' : 'Show history'"
         >
@@ -185,6 +185,9 @@ onMounted(() => {
     document.documentElement.classList.remove('dark')
   }
   
+  // Load showHistory from settings
+  showHistory.value = settingsStore.settings.showHistory ?? true
+  
   // Update tab title periodically when timer is running
   const titleInterval = setInterval(() => {
     updateTabTitle()
@@ -217,6 +220,11 @@ const toggleTheme = () => {
     document.documentElement.classList.remove('dark')
   }
   settingsStore.setTheme(isDark.value ? 'dark' : 'light')
+}
+
+const toggleHistory = () => {
+  showHistory.value = !showHistory.value
+  settingsStore.setShowHistory(showHistory.value)
 }
 
 const toggleFullscreen = () => {
