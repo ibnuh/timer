@@ -3,7 +3,7 @@
     <!-- History -->
     <div class="flex flex-col h-full">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-base font-bold">History</h2>
+        <h2 class="text-base font-bold text-foreground">History</h2>
         <button
           @click="clearHistory"
           :disabled="timerEntries.length === 0"
@@ -13,7 +13,7 @@
         </button>
       </div>
 
-      <div v-if="timerEntries.length === 0" class="flex items-center justify-center py-12 text-sm text-muted-foreground">
+      <div v-if="timerEntries.length === 0" class="flex items-center justify-center py-12 text-sm text-foreground/60">
         No history yet
       </div>
 
@@ -21,18 +21,18 @@
         <div
           v-for="entry in timerEntries.slice(0, 10)"
           :key="entry.id"
-          class="flex justify-between items-center p-2 bg-secondary/50 rounded-md hover:bg-secondary transition-colors"
+          class="flex justify-between items-center p-3 bg-secondary rounded-md hover:bg-secondary/90 transition-colors border border-border/50"
         >
-          <div class="flex items-center gap-2 flex-1 min-w-0">
-            <div class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-primary" />
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="w-2 h-2 rounded-full flex-shrink-0 bg-primary" />
             <div class="min-w-0 flex-1">
-              <div class="text-xs font-medium capitalize truncate">Timer</div>
-              <div class="text-xs text-muted-foreground truncate">
+              <div class="text-sm font-semibold capitalize truncate text-foreground">Timer</div>
+              <div class="text-xs text-foreground/70 truncate mt-0.5">
                 {{ formatDateShort(entry.timestamp) }}
               </div>
             </div>
           </div>
-          <div class="font-mono text-xs font-semibold ml-2">
+          <div class="font-mono text-sm font-bold ml-2 text-foreground">
             {{ formatDuration(entry.duration) }}
           </div>
         </div>

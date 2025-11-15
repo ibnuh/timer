@@ -1,8 +1,8 @@
 <template>
   <div class="h-screen bg-background overflow-hidden flex flex-col">
     <!-- Compact Header -->
-    <header ref="headerRef" class="flex items-center justify-between px-4 py-2 border-b border-border/20 h-14 flex-shrink-0">
-      <h1 class="text-xl font-bold">Timer</h1>
+    <header ref="headerRef" class="flex items-center justify-between px-4 py-2 border-b border-border/60 h-14 flex-shrink-0">
+      <h1 class="text-xl font-bold text-foreground">Timer</h1>
       <div class="flex gap-2 items-center">
         <button
           @click="showHistory = !showHistory"
@@ -120,7 +120,7 @@
       <!-- History Sidebar -->
       <div
         v-if="showHistory"
-        class="hidden lg:block fixed right-0 top-14 bottom-0 w-80 border-l border-border/40 bg-background overflow-y-auto"
+        class="hidden lg:block fixed right-0 top-14 bottom-0 w-80 border-l border-border/60 bg-background overflow-y-auto"
       >
         <div class="p-4">
           <HistoryView />

@@ -5,7 +5,10 @@
       <div class="flex flex-col items-center mb-6">
         <div
           ref="circleContainer"
-          class="relative w-64 h-64 mb-6 cursor-grab active:cursor-grabbing select-none"
+          class="relative w-64 h-64 mb-6 select-none transition-all duration-200"
+          :class="[
+            isDragging ? 'cursor-grabbing' : 'cursor-grab',
+          ]"
           @mousedown="startDrag"
           @touchstart="startDrag"
           @mousemove="handleDrag"
@@ -14,7 +17,8 @@
           @mouseleave="endDrag"
           @touchend="endDrag"
         >
-          <svg class="transform -rotate-90 w-64 h-64">
+          <svg class="transform -rotate-90 w-64 h-64 relative z-10">
+            <!-- Background circle -->
             <circle
               cx="128"
               cy="128"
@@ -22,69 +26,112 @@
               stroke="currentColor"
               stroke-width="6"
               fill="none"
-              class="text-secondary/30"
+              class="text-secondary/40"
             />
+            
+            <!-- Progress circle -->
             <circle
               cx="128"
               cy="128"
               r="116"
               stroke="currentColor"
-              stroke-width="6"
+              stroke-width="7"
               fill="none"
-              class="text-primary transition-all duration-1000"
+              class="text-primary transition-all duration-300"
+              :class="[
+                rotationDirection === 'clockwise' ? 'text-primary' : rotationDirection === 'counter-clockwise' ? 'text-accent' : '',
+              ]"
               :stroke-dasharray="circumference"
               :stroke-dashoffset="strokeDashoffset"
               stroke-linecap="round"
             />
+            
+            <!-- Rotation indicator dots -->
+            <g v-if="isDragging">
+              <circle
+                v-for="(dot, index) in rotationDots"
+                :key="index"
+                :cx="128 + Math.cos(dot.angle) * 116"
+                :cy="128 + Math.sin(dot.angle) * 116"
+                r="3"
+                :fill="dot.color"
+                :opacity="dot.opacity"
+                class="transition-all duration-100"
+              />
+            </g>
           </svg>
-          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          
+          <!-- Center content -->
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
             <div class="text-center">
-              <div class="text-5xl font-bold mb-1">{{ formattedTime }}</div>
+              <div
+                class="text-5xl font-bold mb-1 transition-colors duration-200"
+                :class="[
+                  isDragging && rotationDirection === 'clockwise' ? 'text-primary' : '',
+                  isDragging && rotationDirection === 'counter-clockwise' ? 'text-accent' : '',
+                ]"
+              >
+                {{ formattedTime }}
+              </div>
               <div v-if="isRunning" class="text-xs text-muted-foreground">
                 {{ isPaused ? 'Paused' : 'Running' }}
               </div>
+              <div
+                v-else-if="isDragging"
+                class="text-xs font-medium mt-1 transition-colors"
+                :class="rotationDirection === 'clockwise' ? 'text-primary' : 'text-accent'"
+              >
+                {{ rotationDirection === 'clockwise' ? '↻ Adding' : '↺ Subtracting' }}
+                <span v-if="rotationSpeed > 1" class="ml-1 opacity-70">
+                  ({{ rotationSpeed.toFixed(1) }}x)
+                </span>
+              </div>
+              <div v-else class="text-xs text-muted-foreground mt-1 opacity-60">
+                Drag to adjust
+              </div>
             </div>
           </div>
+          
         </div>
 
         <!-- Quick Add/Subtract Buttons -->
         <div class="flex gap-2 mb-6 flex-wrap justify-center">
           <button
             @click="addTime(-30)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
             :disabled="totalSeconds < 30"
           >
             -30s
           </button>
           <button
             @click="addTime(-20)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
             :disabled="totalSeconds < 20"
           >
             -20s
           </button>
           <button
             @click="addTime(-10)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
             :disabled="totalSeconds < 10"
           >
             -10s
           </button>
           <button
             @click="addTime(10)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground border border-border/50"
           >
             +10s
           </button>
           <button
             @click="addTime(20)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground border border-border/50"
           >
             +20s
           </button>
           <button
             @click="addTime(30)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground border border-border/50"
           >
             +30s
           </button>
@@ -93,14 +140,14 @@
 
       <!-- Timer Presets -->
       <div class="mb-6">
-        <div class="text-sm font-medium mb-3 text-muted-foreground">Quick Presets</div>
+        <div class="text-sm font-semibold mb-3 text-foreground">Quick Presets</div>
         <div class="grid grid-cols-4 gap-2">
           <button
             v-for="preset in presets"
             :key="preset.id || preset.label"
             @click="setPreset(preset.seconds)"
             :disabled="isRunning"
-            class="px-3 py-2 rounded-md bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-3 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
           >
             {{ preset.label }}
           </button>
@@ -110,13 +157,13 @@
       <!-- Time Input Controls -->
       <div class="grid grid-cols-3 gap-4 mb-6">
         <div>
-          <label class="block text-sm font-medium mb-2 text-muted-foreground">Hours</label>
+          <label class="block text-sm font-semibold mb-2 text-foreground">Hours</label>
           <input
             v-model.number="hours"
             type="number"
             min="0"
             max="23"
-            class="w-full px-4 py-3 rounded-lg border border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+            class="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
             :disabled="isRunning"
             @input="updateTime"
           />
@@ -128,7 +175,7 @@
             type="number"
             min="0"
             max="59"
-            class="w-full px-4 py-3 rounded-lg border border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+            class="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
             :disabled="isRunning"
             @input="updateTime"
           />
@@ -140,7 +187,7 @@
             type="number"
             min="0"
             max="59"
-            class="w-full px-4 py-3 rounded-lg border border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+            class="w-full px-4 py-3 rounded-lg border-2 border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
             :disabled="isRunning"
             @input="updateTime"
           />
@@ -180,28 +227,28 @@
       </div>
 
       <!-- Settings -->
-      <div class="pt-4 border-t border-border/40">
+      <div class="pt-4 border-t border-border/60">
         <div class="flex items-center justify-between text-sm mb-3">
           <label class="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               v-model="soundEnabled"
               @change="updateSoundSetting"
-              class="w-4 h-4 rounded"
+              class="w-4 h-4 rounded border-2 border-input checked:bg-primary checked:border-primary"
             />
-            <span>Sound</span>
+            <span class="text-foreground font-medium">Sound</span>
           </label>
           <label class="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               v-model="silentOnTabOpen"
               @change="updateSilentSetting"
-              class="w-4 h-4 rounded"
+              class="w-4 h-4 rounded border-2 border-input checked:bg-primary checked:border-primary"
             />
-            <span>Silent (tab inactive)</span>
+            <span class="text-foreground font-medium">Silent (tab inactive)</span>
           </label>
         </div>
-        <div class="text-xs text-muted-foreground text-center opacity-70">
+        <div class="text-xs text-foreground/70 text-center font-medium">
           Space: Start/Pause • R: Reset • Arrows: Adjust time
         </div>
       </div>
@@ -274,6 +321,8 @@ const lastAngle = ref(0)
 const lastTime = ref(0)
 const rotationSpeed = ref(1)
 const consecutiveRotations = ref(0)
+const rotationDirection = ref<'clockwise' | 'counter-clockwise' | null>(null)
+const currentRotationAngle = ref(0)
 
 const getAngleFromCenter = (x: number, y: number): number => {
   if (!circleContainer.value) return 0
@@ -286,6 +335,8 @@ const getAngleFromCenter = (x: number, y: number): number => {
 const startDrag = (e: MouseEvent | TouchEvent) => {
   if (isRunning.value) return
   isDragging.value = true
+  rotationDirection.value = null
+  currentRotationAngle.value = 0
   const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
   const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
   lastAngle.value = getAngleFromCenter(clientX, clientY)
@@ -310,17 +361,21 @@ const handleDrag = (e: MouseEvent | TouchEvent) => {
   if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI
   
   // Determine rotation direction (positive = clockwise, negative = counter-clockwise)
-  if (Math.abs(angleDiff) > 0.1) {
+  if (Math.abs(angleDiff) > 0.05) {
     const now = Date.now()
     const timeDiff = now - lastTime.value
+    
+    // Update rotation direction
+    rotationDirection.value = angleDiff > 0 ? 'clockwise' : 'counter-clockwise'
+    currentRotationAngle.value += angleDiff
     
     // Speed up if rotating quickly
     if (timeDiff < 50) {
       consecutiveRotations.value++
       rotationSpeed.value = Math.min(5, 1 + consecutiveRotations.value * 0.2)
     } else {
-      consecutiveRotations.value = 0
-      rotationSpeed.value = 1
+      consecutiveRotations.value = Math.max(0, consecutiveRotations.value - 1)
+      rotationSpeed.value = Math.max(1, rotationSpeed.value - 0.1)
     }
     
     // Adjust time: clockwise = add, counter-clockwise = subtract
@@ -334,9 +389,31 @@ const handleDrag = (e: MouseEvent | TouchEvent) => {
 
 const endDrag = () => {
   isDragging.value = false
+  rotationDirection.value = null
+  currentRotationAngle.value = 0
   consecutiveRotations.value = 0
   rotationSpeed.value = 1
 }
+
+// Rotation indicator dots
+const rotationDots = computed(() => {
+  if (!isDragging.value || !rotationDirection.value) return []
+  const dots = []
+  const numDots = Math.min(8, Math.max(4, Math.floor(rotationSpeed.value * 1.5)))
+  const baseAngle = currentRotationAngle.value - Math.PI / 2 // Adjust for SVG rotation
+  const spacing = (2 * Math.PI) / numDots
+  
+  for (let i = 0; i < numDots; i++) {
+    const angle = baseAngle + i * spacing
+    const opacity = 0.4 + (i % 2) * 0.3
+    dots.push({
+      angle,
+      color: rotationDirection.value === 'clockwise' ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
+      opacity,
+    })
+  }
+  return dots
+})
 const strokeDashoffset = computed(() => {
   if (initialSeconds.value === 0) return circumference
   const progress = remainingSeconds.value / initialSeconds.value
