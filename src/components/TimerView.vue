@@ -162,6 +162,11 @@
           <div class="relative flex flex-col">
             <button
               @click="adjustHours(1)"
+              @mousedown.prevent="startRepeat('hours', 1)"
+              @mouseup="stopRepeat"
+              @mouseleave="stopRepeat"
+              @touchstart.prevent="startRepeat('hours', 1)"
+              @touchend="stopRepeat"
               :disabled="isRunning || hours >= 23"
               class="flex items-center justify-center h-8 rounded-t-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-b-0 border-input"
               type="button"
@@ -181,6 +186,11 @@
             />
             <button
               @click="adjustHours(-1)"
+              @mousedown.prevent="startRepeat('hours', -1)"
+              @mouseup="stopRepeat"
+              @mouseleave="stopRepeat"
+              @touchstart.prevent="startRepeat('hours', -1)"
+              @touchend="stopRepeat"
               :disabled="isRunning || hours <= 0"
               class="flex items-center justify-center h-8 rounded-b-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-t-0 border-input"
               type="button"
@@ -198,6 +208,11 @@
           <div class="relative flex flex-col">
             <button
               @click="adjustMinutes(1)"
+              @mousedown.prevent="startRepeat('minutes', 1)"
+              @mouseup="stopRepeat"
+              @mouseleave="stopRepeat"
+              @touchstart.prevent="startRepeat('minutes', 1)"
+              @touchend="stopRepeat"
               :disabled="isRunning || minutes >= 59"
               class="flex items-center justify-center h-8 rounded-t-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-b-0 border-input"
               type="button"
@@ -217,6 +232,11 @@
             />
             <button
               @click="adjustMinutes(-1)"
+              @mousedown.prevent="startRepeat('minutes', -1)"
+              @mouseup="stopRepeat"
+              @mouseleave="stopRepeat"
+              @touchstart.prevent="startRepeat('minutes', -1)"
+              @touchend="stopRepeat"
               :disabled="isRunning || minutes <= 0"
               class="flex items-center justify-center h-8 rounded-b-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-t-0 border-input"
               type="button"
@@ -234,6 +254,11 @@
           <div class="relative flex flex-col">
             <button
               @click="adjustSeconds(1)"
+              @mousedown.prevent="startRepeat('seconds', 1)"
+              @mouseup="stopRepeat"
+              @mouseleave="stopRepeat"
+              @touchstart.prevent="startRepeat('seconds', 1)"
+              @touchend="stopRepeat"
               :disabled="isRunning || seconds >= 59"
               class="flex items-center justify-center h-8 rounded-t-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-b-0 border-input"
               type="button"
@@ -253,6 +278,11 @@
             />
             <button
               @click="adjustSeconds(-1)"
+              @mousedown.prevent="startRepeat('seconds', -1)"
+              @mouseup="stopRepeat"
+              @mouseleave="stopRepeat"
+              @touchstart.prevent="startRepeat('seconds', -1)"
+              @touchend="stopRepeat"
               :disabled="isRunning || seconds <= 0"
               class="flex items-center justify-center h-8 rounded-b-lg bg-secondary hover:bg-secondary/80 active:bg-secondary/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border border-t-0 border-input"
               type="button"
@@ -518,6 +548,68 @@ const adjustSeconds = (delta: number) => {
   updateTime()
 }
 
+// Repeat functionality for hold-to-increase/decrease
+let repeatTimeoutId: number | null = null
+let repeatIntervalId: number | null = null
+let repeatType: 'hours' | 'minutes' | 'seconds' | null = null
+let repeatDelta: number = 0
+
+const startRepeat = (type: 'hours' | 'minutes' | 'seconds', delta: number) => {
+  if (isRunning.value) return
+  
+  // Immediately adjust once
+  if (type === 'hours') adjustHours(delta)
+  else if (type === 'minutes') adjustMinutes(delta)
+  else if (type === 'seconds') adjustSeconds(delta)
+  
+  repeatType = type
+  repeatDelta = delta
+  
+  // Start repeating after initial delay (500ms like default browser behavior)
+  repeatTimeoutId = window.setTimeout(() => {
+    // Then repeat every 100ms
+    repeatIntervalId = window.setInterval(() => {
+      if (isRunning.value) {
+        stopRepeat()
+        return
+      }
+      
+      if (repeatType === 'hours') {
+        if ((repeatDelta > 0 && hours.value >= 23) || (repeatDelta < 0 && hours.value <= 0)) {
+          stopRepeat()
+          return
+        }
+        adjustHours(repeatDelta)
+      } else if (repeatType === 'minutes') {
+        if ((repeatDelta > 0 && minutes.value >= 59) || (repeatDelta < 0 && minutes.value <= 0)) {
+          stopRepeat()
+          return
+        }
+        adjustMinutes(repeatDelta)
+      } else if (repeatType === 'seconds') {
+        if ((repeatDelta > 0 && seconds.value >= 59) || (repeatDelta < 0 && seconds.value <= 0)) {
+          stopRepeat()
+          return
+        }
+        adjustSeconds(repeatDelta)
+      }
+    }, 100)
+  }, 500)
+}
+
+const stopRepeat = () => {
+  if (repeatTimeoutId !== null) {
+    clearTimeout(repeatTimeoutId)
+    repeatTimeoutId = null
+  }
+  if (repeatIntervalId !== null) {
+    clearInterval(repeatIntervalId)
+    repeatIntervalId = null
+  }
+  repeatType = null
+  repeatDelta = 0
+}
+
 const addTime = (additionalSeconds: number) => {
   if (isRunning.value) {
     remainingSeconds.value = Math.max(0, remainingSeconds.value + additionalSeconds)
@@ -612,6 +704,7 @@ const start = () => {
   const total = hours.value * 3600 + minutes.value * 60 + seconds.value
   if (total === 0) return
 
+  stopRepeat() // Stop any ongoing repeat when starting timer
   initialSeconds.value = total
   remainingSeconds.value = total
   isRunning.value = true
@@ -708,6 +801,7 @@ onUnmounted(() => {
   if (intervalId) {
     clearInterval(intervalId)
   }
+  stopRepeat()
   window.removeEventListener('keydown', handleKeyDown)
 })
 
