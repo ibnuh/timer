@@ -1,7 +1,7 @@
 <template>
-  <div class="h-full flex flex-col gap-3">
+  <div class="flex flex-col gap-3">
     <!-- History -->
-    <div class="bg-card rounded-lg p-3 shadow-sm border border-border/20 flex-1 flex flex-col min-h-0">
+    <div class="bg-card rounded-lg p-4 shadow-sm border border-border/20">
       <div class="flex justify-between items-center mb-2">
         <h2 class="text-sm font-bold">History</h2>
         <button
@@ -13,11 +13,11 @@
         </button>
       </div>
 
-      <div v-if="timerEntries.length === 0" class="flex-1 flex items-center justify-center text-xs text-muted-foreground">
+      <div v-if="timerEntries.length === 0" class="flex items-center justify-center py-8 text-sm text-muted-foreground">
         No history yet
       </div>
 
-      <div v-else class="flex-1 overflow-y-auto space-y-1.5">
+      <div v-else class="max-h-96 overflow-y-auto space-y-2 mt-2">
         <div
           v-for="entry in timerEntries.slice(0, 10)"
           :key="entry.id"

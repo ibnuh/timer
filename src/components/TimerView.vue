@@ -1,11 +1,11 @@
 <template>
-  <div class="h-full flex flex-col">
-    <div class="bg-card rounded-lg p-4 shadow-sm border border-border/20 flex-1 flex flex-col">
+  <div class="w-full">
+    <div class="bg-card rounded-lg p-6 shadow-sm border border-border/20">
       <!-- Circular Timer Display -->
-      <div class="flex flex-col items-center mb-4">
+      <div class="flex flex-col items-center mb-6">
         <div
           ref="circleContainer"
-          class="relative w-64 h-64 mb-4 cursor-grab active:cursor-grabbing select-none"
+          class="relative w-64 h-64 mb-6 cursor-grab active:cursor-grabbing select-none"
           @mousedown="startDrag"
           @touchstart="startDrag"
           @mousemove="handleDrag"
@@ -48,43 +48,43 @@
         </div>
 
         <!-- Quick Add/Subtract Buttons -->
-        <div class="flex gap-2 mb-4 flex-wrap justify-center">
+        <div class="flex gap-2 mb-6 flex-wrap justify-center">
+          <button
+            @click="addTime(-30)"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="totalSeconds < 30"
+          >
+            -30s
+          </button>
           <button
             @click="addTime(-20)"
-            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="totalSeconds < 20"
           >
             -20s
           </button>
           <button
             @click="addTime(-10)"
-            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="totalSeconds < 10"
           >
             -10s
           </button>
           <button
             @click="addTime(10)"
-            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
           >
             +10s
           </button>
           <button
             @click="addTime(20)"
-            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
           >
             +20s
           </button>
           <button
-            @click="addTime(-30)"
-            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="totalSeconds < 30"
-          >
-            -30s
-          </button>
-          <button
             @click="addTime(30)"
-            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
+            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
           >
             +30s
           </button>
@@ -92,15 +92,15 @@
       </div>
 
       <!-- Timer Presets -->
-      <div class="mb-4">
-        <div class="text-xs font-medium mb-2 text-muted-foreground">Quick Presets</div>
+      <div class="mb-6">
+        <div class="text-sm font-medium mb-3 text-muted-foreground">Quick Presets</div>
         <div class="grid grid-cols-4 gap-2">
           <button
             v-for="preset in presets"
             :key="preset.id || preset.label"
             @click="setPreset(preset.seconds)"
             :disabled="isRunning"
-            class="px-2 py-1.5 rounded-md bg-secondary/50 hover:bg-secondary transition-colors text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-3 py-2 rounded-md bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ preset.label }}
           </button>
@@ -108,39 +108,39 @@
       </div>
 
       <!-- Time Input Controls -->
-      <div class="grid grid-cols-3 gap-3 mb-4">
+      <div class="grid grid-cols-3 gap-4 mb-6">
         <div>
-          <label class="block text-xs font-medium mb-1.5 text-muted-foreground">Hours</label>
+          <label class="block text-sm font-medium mb-2 text-muted-foreground">Hours</label>
           <input
             v-model.number="hours"
             type="number"
             min="0"
             max="23"
-            class="w-full px-3 py-2 rounded-md border border-input bg-background text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-ring"
+            class="w-full px-4 py-3 rounded-lg border border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring transition-all"
             :disabled="isRunning"
             @input="updateTime"
           />
         </div>
         <div>
-          <label class="block text-xs font-medium mb-1.5 text-muted-foreground">Minutes</label>
+          <label class="block text-sm font-medium mb-2 text-muted-foreground">Minutes</label>
           <input
             v-model.number="minutes"
             type="number"
             min="0"
             max="59"
-            class="w-full px-3 py-2 rounded-md border border-input bg-background text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-ring"
+            class="w-full px-4 py-3 rounded-lg border border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring transition-all"
             :disabled="isRunning"
             @input="updateTime"
           />
         </div>
         <div>
-          <label class="block text-xs font-medium mb-1.5 text-muted-foreground">Seconds</label>
+          <label class="block text-sm font-medium mb-2 text-muted-foreground">Seconds</label>
           <input
             v-model.number="seconds"
             type="number"
             min="0"
             max="59"
-            class="w-full px-3 py-2 rounded-md border border-input bg-background text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-ring"
+            class="w-full px-4 py-3 rounded-lg border border-input bg-background text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-ring transition-all"
             :disabled="isRunning"
             @input="updateTime"
           />
@@ -148,12 +148,12 @@
       </div>
 
       <!-- Control Buttons -->
-      <div class="flex gap-2 justify-center mb-4">
+      <div class="flex gap-3 justify-center mb-6">
         <button
           v-if="!isRunning"
           @click="start"
           :disabled="totalSeconds === 0"
-          class="px-6 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          class="px-8 py-3 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           Start
         </button>
@@ -167,27 +167,27 @@
         <button
           v-else
           @click="pause"
-          class="px-6 py-2 rounded-md bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
+          class="px-8 py-3 rounded-lg bg-secondary text-secondary-foreground text-base font-medium hover:bg-secondary/80 transition-colors"
         >
           Pause
         </button>
         <button
           @click="reset"
-          class="px-6 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors"
+          class="px-8 py-3 rounded-lg bg-destructive text-destructive-foreground text-base font-medium hover:bg-destructive/90 transition-colors"
         >
           Reset
         </button>
       </div>
 
       <!-- Settings -->
-      <div class="pt-3 border-t border-border/20">
-        <div class="flex items-center justify-between text-xs mb-2">
+      <div class="pt-4 border-t border-border/20">
+        <div class="flex items-center justify-between text-sm mb-3">
           <label class="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               v-model="soundEnabled"
               @change="updateSoundSetting"
-              class="w-3.5 h-3.5 rounded"
+              class="w-4 h-4 rounded"
             />
             <span>Sound</span>
           </label>
@@ -196,13 +196,13 @@
               type="checkbox"
               v-model="silentOnTabOpen"
               @change="updateSilentSetting"
-              class="w-3.5 h-3.5 rounded"
+              class="w-4 h-4 rounded"
             />
             <span>Silent (tab inactive)</span>
           </label>
         </div>
-        <div class="text-xs text-muted-foreground text-center">
-          <span class="opacity-70">Space: Start/Pause • R: Reset • Arrows: Adjust time</span>
+        <div class="text-xs text-muted-foreground text-center opacity-70">
+          Space: Start/Pause • R: Reset • Arrows: Adjust time
         </div>
       </div>
     </div>

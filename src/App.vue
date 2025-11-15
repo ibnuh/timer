@@ -105,18 +105,23 @@
     </header>
 
     <!-- Main Content Area -->
-    <div class="flex-1 overflow-hidden grid grid-cols-1 gap-3 p-3" :class="showHistory ? 'lg:grid-cols-3' : 'lg:grid-cols-1'">
-      <!-- Timer -->
-      <div :class="showHistory ? 'lg:col-span-2' : 'lg:col-span-1'" class="flex flex-col overflow-hidden min-h-0">
-        <!-- Timer View -->
-        <div class="flex-1 overflow-hidden min-h-0">
-          <TimerView ref="timerRef" />
-        </div>
-      </div>
+    <div class="flex-1 overflow-y-auto">
+      <div class="container mx-auto max-w-7xl px-4 py-6">
+        <div class="grid grid-cols-1 gap-6" :class="showHistory ? 'lg:grid-cols-3' : 'lg:grid-cols-1'">
+          <!-- Timer -->
+          <div :class="showHistory ? 'lg:col-span-2' : 'lg:col-span-1'" class="flex justify-center">
+            <div class="w-full max-w-2xl">
+              <TimerView ref="timerRef" />
+            </div>
+          </div>
 
-      <!-- Right: History & Settings -->
-      <div v-if="showHistory" class="lg:col-span-1 flex flex-col gap-3 overflow-hidden min-h-0">
-        <HistoryView />
+          <!-- Right: History & Settings -->
+          <div v-if="showHistory" class="lg:col-span-1">
+            <div class="sticky top-6">
+              <HistoryView />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
