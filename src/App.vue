@@ -143,8 +143,18 @@ const updateTabTitle = () => {
 }
 
 onMounted(() => {
-  isDark.value = document.documentElement.classList.contains('dark')
+  // Load settings first
   settingsStore.loadSettings()
+  
+  // Then sync isDark with the loaded theme
+  isDark.value = settingsStore.settings.theme === 'dark'
+  
+  // Ensure the class matches the theme
+  if (isDark.value) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
   
   // Update tab title periodically when timer/stopwatch is running
   const titleInterval = setInterval(() => {
