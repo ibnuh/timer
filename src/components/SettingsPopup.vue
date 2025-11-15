@@ -71,6 +71,42 @@
             </div>
           </div>
 
+          <!-- Default Presets -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold">Default Presets</h3>
+              <button
+                @click="resetDefaultPresets"
+                class="px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors"
+              >
+                Reset
+              </button>
+            </div>
+            <div v-if="defaultPresets.length === 0" class="text-xs text-muted-foreground text-center py-4">
+              No default presets
+            </div>
+            <div v-else class="space-y-2">
+              <div
+                v-for="preset in defaultPresets"
+                :key="preset.id"
+                class="flex items-center gap-2 p-2 bg-secondary/50 rounded-md border border-primary/20"
+              >
+                <div class="flex-1">
+                  <div class="text-sm font-medium">{{ preset.label }}</div>
+                  <div class="text-xs text-muted-foreground">{{ formatPresetTime(preset.seconds) }}</div>
+                </div>
+                <button
+                  @click="editPreset(preset, true)"
+                  class="p-1.5 rounded hover:bg-secondary transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Custom Presets -->
           <div>
             <div class="flex items-center justify-between mb-3">
@@ -117,6 +153,9 @@
 
           <!-- Add/Edit Preset Form -->
           <div v-if="showAddPreset || editingPreset" class="p-3 bg-secondary/30 rounded-md space-y-3">
+            <div v-if="editingPreset && isEditingDefault" class="text-xs text-muted-foreground italic">
+              Editing default preset
+            </div>
             <div>
               <label class="block text-xs font-medium mb-1">Label</label>
               <input
@@ -218,8 +257,10 @@ const confirmBeforeClose = ref(settingsStore.settings.confirmBeforeClose)
 const notificationsEnabled = ref(settingsStore.settings.notificationsEnabled)
 const showAddPreset = ref(false)
 const editingPreset = ref<TimerPreset | null>(null)
+const isEditingDefault = ref(false)
 const presetForm = ref({ label: '', seconds: 60 })
 
+const defaultPresets = computed(() => settingsStore.settings.defaultPresets || [])
 const customPresets = computed(() => settingsStore.settings.customPresets || [])
 
 const formatPresetTime = (seconds: number) => {
@@ -261,7 +302,11 @@ const savePreset = () => {
   }
   
   if (editingPreset.value) {
-    settingsStore.updateCustomPreset(editingPreset.value.id!, presetForm.value)
+    if (isEditingDefault.value) {
+      settingsStore.updateDefaultPreset(editingPreset.value.id!, presetForm.value)
+    } else {
+      settingsStore.updateCustomPreset(editingPreset.value.id!, presetForm.value)
+    }
   } else {
     settingsStore.addCustomPreset(presetForm.value)
   }
@@ -272,13 +317,21 @@ const savePreset = () => {
 const cancelPresetEdit = () => {
   showAddPreset.value = false
   editingPreset.value = null
+  isEditingDefault.value = false
   presetForm.value = { label: '', seconds: 60 }
 }
 
-const editPreset = (preset: TimerPreset) => {
+const editPreset = (preset: TimerPreset, isDefault: boolean = false) => {
   editingPreset.value = preset
+  isEditingDefault.value = isDefault
   presetForm.value = { label: preset.label, seconds: preset.seconds }
   showAddPreset.value = false
+}
+
+const resetDefaultPresets = () => {
+  if (confirm('Are you sure you want to reset all default presets to their original values?')) {
+    settingsStore.resetDefaultPresets()
+  }
 }
 
 const removePreset = (id: string) => {

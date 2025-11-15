@@ -15,7 +15,19 @@ export interface Settings {
   showHistory: boolean
   notificationsEnabled: boolean
   customPresets: TimerPreset[]
+  defaultPresets: TimerPreset[]
 }
+
+const DEFAULT_PRESETS: TimerPreset[] = [
+  { label: '2min', seconds: 120, id: 'default-2min' },
+  { label: '3min', seconds: 180, id: 'default-3min' },
+  { label: '5min', seconds: 300, id: 'default-5min' },
+  { label: '10min', seconds: 600, id: 'default-10min' },
+  { label: '15min', seconds: 900, id: 'default-15min' },
+  { label: '25min', seconds: 1500, id: 'default-25min' },
+  { label: '30min', seconds: 1800, id: 'default-30min' },
+  { label: '1hr', seconds: 3600, id: 'default-1hr' },
+]
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<Settings>({
@@ -26,13 +38,19 @@ export const useSettingsStore = defineStore('settings', () => {
     showHistory: true,
     notificationsEnabled: true,
     customPresets: [],
+    defaultPresets: [...DEFAULT_PRESETS],
   })
 
   const loadSettings = () => {
     const saved = localStorage.getItem('timer-settings')
     if (saved) {
       try {
-        settings.value = { ...settings.value, ...JSON.parse(saved) }
+        const loaded = JSON.parse(saved)
+        // Migrate old settings: if defaultPresets doesn't exist, initialize with defaults
+        if (!loaded.defaultPresets) {
+          loaded.defaultPresets = [...DEFAULT_PRESETS]
+        }
+        settings.value = { ...settings.value, ...loaded }
         if (settings.value.theme === 'dark') {
           document.documentElement.classList.add('dark')
         }
@@ -104,6 +122,21 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  const updateDefaultPreset = (id: string, preset: Partial<TimerPreset>) => {
+    if (settings.value.defaultPresets) {
+      const index = settings.value.defaultPresets.findIndex(p => p.id === id)
+      if (index !== -1) {
+        settings.value.defaultPresets[index] = { ...settings.value.defaultPresets[index], ...preset }
+        saveSettings()
+      }
+    }
+  }
+
+  const resetDefaultPresets = () => {
+    settings.value.defaultPresets = [...DEFAULT_PRESETS]
+    saveSettings()
+  }
+
   const exportSettings = () => {
     const dataStr = JSON.stringify(settings.value, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
@@ -153,6 +186,8 @@ export const useSettingsStore = defineStore('settings', () => {
     addCustomPreset,
     removeCustomPreset,
     updateCustomPreset,
+    updateDefaultPreset,
+    resetDefaultPresets,
     exportSettings,
     importSettings,
   }

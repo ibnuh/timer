@@ -380,18 +380,8 @@ const silentOnTabOpen = ref(settingsStore.settings.silentOnTabOpen)
 let intervalId: number | null = null
 
 // Timer presets - default + custom
-const defaultPresets = [
-  { label: '2min', seconds: 120 },
-  { label: '3min', seconds: 180 },
-  { label: '5min', seconds: 300 },
-  { label: '10min', seconds: 600 },
-  { label: '15min', seconds: 900 },
-  { label: '25min', seconds: 1500 },
-  { label: '30min', seconds: 1800 },
-  { label: '1hr', seconds: 3600 },
-]
-
 const presets = computed(() => {
+  const defaultPresets = settingsStore.settings.defaultPresets || []
   const custom = settingsStore.settings.customPresets || []
   return [...defaultPresets, ...custom]
 })
