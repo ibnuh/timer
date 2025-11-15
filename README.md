@@ -1,15 +1,14 @@
-# Timer & Stopwatch Web App
+# Timer Web App
 
-A modern timer and stopwatch web application built with Vue.js 3, TypeScript, and Tailwind CSS.
+A modern timer web application built with Vue.js 3, TypeScript, and Tailwind CSS.
 
 ## Features
 
 - ⏱️ **Timer**: Set custom hours, minutes, and seconds with circular progress indicator
-- ⏲️ **Stopwatch**: Track elapsed time with lap functionality
 - 🎨 **Theme Support**: Light and dark mode
 - 🔊 **Sound Options**: Enable/disable sounds and silent mode when tab is inactive
 - 📱 **Full Screen**: Toggle fullscreen mode
-- 📊 **History**: Track your timer and stopwatch sessions
+- 📊 **History**: Track your timer sessions
 - 💾 **Backup & Restore**: Export and import your settings and history
 - 🔔 **Notifications**: Browser notifications when timer completes
 - ➕ **Quick Add**: Add 10s or 30s to timer quickly
@@ -55,7 +54,6 @@ npm run preview
 src/
 ├── components/
 │   ├── TimerView.vue      # Timer component
-│   ├── StopwatchView.vue   # Stopwatch component
 │   └── HistoryView.vue     # History and backup component
 ├── stores/
 │   ├── settings.ts         # Settings store
@@ -71,10 +69,9 @@ src/
 ## Usage
 
 1. **Timer**: Set hours, minutes, and seconds, then click Start. Use +10s and +30s buttons to quickly add time.
-2. **Stopwatch**: Click Start to begin timing. Use Lap to record lap times.
-3. **History**: View your timer and stopwatch history at the bottom of the page.
-4. **Settings**: Toggle sound, silent mode, theme, and fullscreen from the header.
-5. **Backup**: Export your settings and history, or import them from a backup file.
+2. **History**: View your timer history at the bottom of the page.
+3. **Settings**: Toggle sound, silent mode, theme, and fullscreen from the header.
+4. **Backup**: Export your settings and history, or import them from a backup file.
 
 ## License
 

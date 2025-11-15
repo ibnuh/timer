@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 export interface HistoryEntry {
   id: string
-  type: 'timer' | 'stopwatch'
+  type: 'timer'
   duration: number
   timestamp: number
   label?: string
