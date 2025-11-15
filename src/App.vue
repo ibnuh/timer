@@ -92,8 +92,8 @@
 
         <!-- Timer/Stopwatch View -->
         <div class="flex-1 overflow-hidden min-h-0">
-          <TimerView v-if="activeTab === 'timer'" />
-          <StopwatchView v-else />
+          <TimerView v-if="activeTab === 'timer'" ref="timerRef" />
+          <StopwatchView v-else ref="stopwatchRef" />
         </div>
       </div>
 
@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useSettingsStore } from './stores/settings'
 import TimerView from './components/TimerView.vue'
 import StopwatchView from './components/StopwatchView.vue'
@@ -116,9 +116,49 @@ const activeTab = ref<'timer' | 'stopwatch'>('timer')
 const settingsStore = useSettingsStore()
 const isDark = ref(false)
 
+const timerRef = ref<InstanceType<typeof TimerView> | null>(null)
+const stopwatchRef = ref<InstanceType<typeof StopwatchView> | null>(null)
+
+// Update tab title with timer/stopwatch time
+const updateTabTitle = () => {
+  const baseTitle = 'Timer & Stopwatch'
+  
+  if (activeTab.value === 'timer' && timerRef.value) {
+    const { formattedTime, isRunning, isPaused } = timerRef.value
+    if (isRunning || isPaused) {
+      document.title = `${formattedTime} - ${baseTitle}`
+    } else {
+      document.title = baseTitle
+    }
+  } else if (activeTab.value === 'stopwatch' && stopwatchRef.value) {
+    const { formattedTime, isRunning, elapsedTime } = stopwatchRef.value
+    if (isRunning || elapsedTime > 0) {
+      document.title = `${formattedTime} - ${baseTitle}`
+    } else {
+      document.title = baseTitle
+    }
+  } else {
+    document.title = baseTitle
+  }
+}
+
 onMounted(() => {
   isDark.value = document.documentElement.classList.contains('dark')
   settingsStore.loadSettings()
+  
+  // Update tab title periodically when timer/stopwatch is running
+  const titleInterval = setInterval(() => {
+    updateTabTitle()
+  }, 100)
+  
+  // Cleanup on unmount
+  onUnmounted(() => {
+    clearInterval(titleInterval)
+  })
+})
+
+watch(activeTab, () => {
+  updateTabTitle()
 })
 
 const toggleTheme = () => {

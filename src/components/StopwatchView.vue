@@ -82,6 +82,13 @@
           </div>
         </div>
       </div>
+
+      <!-- Keyboard Shortcuts Hint -->
+      <div class="pt-3 border-t border-border/20">
+        <div class="text-xs text-muted-foreground text-center">
+          <span class="opacity-70">Space: Start/Stop • R: Reset • L: Lap</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -102,6 +109,13 @@ let intervalId: number | null = null
 
 const formattedTime = computed(() => {
   return formatTime(elapsedTime.value)
+})
+
+// Expose methods for parent component
+defineExpose({
+  formattedTime,
+  isRunning,
+  elapsedTime,
 })
 
 const formatTime = (milliseconds: number) => {
@@ -161,10 +175,52 @@ const reset = () => {
   }
 }
 
+// Keyboard shortcuts
+const handleKeyDown = (e: KeyboardEvent) => {
+  // Don't handle shortcuts when typing in inputs
+  if (e.target instanceof HTMLInputElement) {
+    return
+  }
+
+  // Space: Start/Stop
+  if (e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault()
+    if (!isRunning.value && elapsedTime.value === 0) {
+      start()
+    } else if (isRunning.value) {
+      stop()
+    } else {
+      resume()
+    }
+    return
+  }
+
+  // R: Reset
+  if (e.key === 'r' || e.key === 'R') {
+    e.preventDefault()
+    reset()
+    return
+  }
+
+  // L: Lap
+  if (e.key === 'l' || e.key === 'L') {
+    e.preventDefault()
+    if (isRunning.value) {
+      lap()
+    }
+    return
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+})
+
 onUnmounted(() => {
   if (intervalId) {
     clearInterval(intervalId)
   }
+  window.removeEventListener('keydown', handleKeyDown)
 })
 </script>
 

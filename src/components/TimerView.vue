@@ -37,8 +37,15 @@
           </div>
         </div>
 
-        <!-- Quick Add Buttons -->
+        <!-- Quick Add/Subtract Buttons -->
         <div class="flex gap-2 mb-4">
+          <button
+            @click="addTime(-10)"
+            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="totalSeconds < 10"
+          >
+            -10s
+          </button>
           <button
             @click="addTime(10)"
             class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
@@ -46,10 +53,33 @@
             +10s
           </button>
           <button
+            @click="addTime(-30)"
+            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="totalSeconds < 30"
+          >
+            -30s
+          </button>
+          <button
             @click="addTime(30)"
             class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
           >
             +30s
+          </button>
+        </div>
+      </div>
+
+      <!-- Timer Presets -->
+      <div class="mb-4">
+        <div class="text-xs font-medium mb-2 text-muted-foreground">Quick Presets</div>
+        <div class="grid grid-cols-3 gap-2">
+          <button
+            v-for="preset in presets"
+            :key="preset.label"
+            @click="setPreset(preset.seconds)"
+            :disabled="isRunning"
+            class="px-3 py-2 rounded-md bg-secondary/50 hover:bg-secondary transition-colors text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ preset.label }}
           </button>
         </div>
       </div>
@@ -128,7 +158,7 @@
 
       <!-- Settings -->
       <div class="pt-3 border-t border-border/20">
-        <div class="flex items-center justify-between text-xs">
+        <div class="flex items-center justify-between text-xs mb-2">
           <label class="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -147,6 +177,9 @@
             />
             <span>Silent (tab inactive)</span>
           </label>
+        </div>
+        <div class="text-xs text-muted-foreground text-center">
+          <span class="opacity-70">Space: Start/Pause • R: Reset • Arrows: Adjust time</span>
         </div>
       </div>
     </div>
@@ -174,6 +207,16 @@ const soundEnabled = ref(settingsStore.settings.soundEnabled)
 const silentOnTabOpen = ref(settingsStore.settings.silentOnTabOpen)
 
 let intervalId: number | null = null
+
+// Timer presets
+const presets = [
+  { label: '5min', seconds: 300 },
+  { label: '10min', seconds: 600 },
+  { label: '15min', seconds: 900 },
+  { label: '25min', seconds: 1500 },
+  { label: '30min', seconds: 1800 },
+  { label: '1hr', seconds: 3600 },
+]
 
 const totalSeconds = computed(() => {
   if (isRunning.value) {
@@ -210,18 +253,91 @@ const updateTime = () => {
 
 const addTime = (additionalSeconds: number) => {
   if (isRunning.value) {
-    remainingSeconds.value += additionalSeconds
+    remainingSeconds.value = Math.max(0, remainingSeconds.value + additionalSeconds)
   } else {
-    seconds.value += additionalSeconds
-    if (seconds.value >= 60) {
-      minutes.value += Math.floor(seconds.value / 60)
-      seconds.value = seconds.value % 60
-      if (minutes.value >= 60) {
-        hours.value += Math.floor(minutes.value / 60)
-        minutes.value = minutes.value % 60
-      }
+    const total = hours.value * 3600 + minutes.value * 60 + seconds.value + additionalSeconds
+    if (total < 0) {
+      hours.value = 0
+      minutes.value = 0
+      seconds.value = 0
+    } else {
+      hours.value = Math.floor(total / 3600)
+      const remaining = total % 3600
+      minutes.value = Math.floor(remaining / 60)
+      seconds.value = remaining % 60
     }
     updateTime()
+  }
+}
+
+const setPreset = (presetSeconds: number) => {
+  if (isRunning.value) return
+  hours.value = Math.floor(presetSeconds / 3600)
+  const remaining = presetSeconds % 3600
+  minutes.value = Math.floor(remaining / 60)
+  seconds.value = remaining % 60
+  updateTime()
+}
+
+// Keyboard shortcuts
+const handleKeyDown = (e: KeyboardEvent) => {
+  // Don't handle shortcuts when typing in inputs
+  if (e.target instanceof HTMLInputElement) {
+    // Allow arrow keys in inputs
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault()
+      handleTimeAdjustment(e.key)
+    }
+    return
+  }
+
+  // Space: Start/Pause
+  if (e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault()
+    if (!isRunning.value && totalSeconds.value > 0) {
+      start()
+    } else if (isRunning.value && !isPaused.value) {
+      pause()
+    } else if (isPaused.value) {
+      resume()
+    }
+    return
+  }
+
+  // R: Reset
+  if (e.key === 'r' || e.key === 'R') {
+    e.preventDefault()
+    reset()
+    return
+  }
+
+  // Arrow keys: Adjust time
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    e.preventDefault()
+    handleTimeAdjustment(e.key)
+  }
+}
+
+const handleTimeAdjustment = (key: string) => {
+  if (isRunning.value) return
+
+  switch (key) {
+    case 'ArrowUp':
+      // Increase seconds
+      addTime(1)
+      break
+    case 'ArrowDown':
+      // Decrease seconds
+      addTime(-1)
+      break
+    case 'ArrowRight':
+      // Increase minutes
+      addTime(60)
+      break
+    case 'ArrowLeft':
+      // Decrease minutes
+      addTime(-60)
+      break
   }
 }
 
@@ -316,12 +432,16 @@ onMounted(() => {
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission()
   }
+  
+  // Add keyboard event listener
+  window.addEventListener('keydown', handleKeyDown)
 })
 
 onUnmounted(() => {
   if (intervalId) {
     clearInterval(intervalId)
   }
+  window.removeEventListener('keydown', handleKeyDown)
 })
 
 watch(
@@ -337,5 +457,13 @@ watch(
     silentOnTabOpen.value = val
   }
 )
+
+// Expose methods for parent component
+defineExpose({
+  formattedTime,
+  isRunning,
+  isPaused,
+  totalSeconds,
+})
 </script>
 
