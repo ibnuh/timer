@@ -1,23 +1,23 @@
 <template>
-  <div class="flex flex-col gap-3">
+  <div class="flex flex-col h-full">
     <!-- History -->
-    <div class="p-4">
-      <div class="flex justify-between items-center mb-2">
-        <h2 class="text-sm font-bold">History</h2>
+    <div class="flex flex-col h-full">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-base font-bold">History</h2>
         <button
           @click="clearHistory"
           :disabled="timerEntries.length === 0"
-          class="px-2 py-1 rounded text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-3 py-1.5 rounded-md text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Clear
         </button>
       </div>
 
-      <div v-if="timerEntries.length === 0" class="flex items-center justify-center py-8 text-sm text-muted-foreground">
+      <div v-if="timerEntries.length === 0" class="flex items-center justify-center py-12 text-sm text-muted-foreground">
         No history yet
       </div>
 
-      <div v-else class="max-h-96 overflow-y-auto space-y-2 mt-2">
+      <div v-else class="flex-1 overflow-y-auto space-y-2">
         <div
           v-for="entry in timerEntries.slice(0, 10)"
           :key="entry.id"

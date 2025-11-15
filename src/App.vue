@@ -1,7 +1,7 @@
 <template>
   <div class="h-screen bg-background overflow-hidden flex flex-col">
     <!-- Compact Header -->
-    <header class="flex items-center justify-between px-4 py-2 border-b border-border/20">
+    <header ref="headerRef" class="flex items-center justify-between px-4 py-2 border-b border-border/20 h-14 flex-shrink-0">
       <h1 class="text-xl font-bold">Timer</h1>
       <div class="flex gap-2 items-center">
         <button
@@ -105,22 +105,32 @@
     </header>
 
     <!-- Main Content Area -->
-    <div class="flex-1 overflow-y-auto">
-      <div class="container mx-auto max-w-7xl px-4 py-6">
-        <div class="grid grid-cols-1 gap-6" :class="showHistory ? 'lg:grid-cols-3' : 'lg:grid-cols-1'">
-          <!-- Timer -->
-          <div :class="showHistory ? 'lg:col-span-2' : 'lg:col-span-1'" class="flex justify-center">
+    <div class="flex-1 overflow-hidden flex">
+      <!-- Timer Content -->
+      <div class="flex-1 overflow-y-auto" :class="showHistory ? 'lg:mr-80' : ''">
+        <div class="container mx-auto max-w-4xl px-4 py-6">
+          <div class="flex justify-center">
             <div class="w-full max-w-2xl">
               <TimerView ref="timerRef" />
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- Right: History & Settings -->
-          <div v-if="showHistory" class="lg:col-span-1">
-            <div class="sticky top-6">
-              <HistoryView />
-            </div>
-          </div>
+      <!-- History Sidebar -->
+      <div
+        v-if="showHistory"
+        class="hidden lg:block fixed right-0 top-14 bottom-0 w-80 border-l border-border/40 bg-background overflow-y-auto"
+      >
+        <div class="p-4">
+          <HistoryView />
+        </div>
+      </div>
+
+      <!-- History for Mobile (below timer) -->
+      <div v-if="showHistory" class="lg:hidden w-full">
+        <div class="container mx-auto max-w-4xl px-4 pb-6">
+          <HistoryView />
         </div>
       </div>
     </div>
@@ -143,6 +153,7 @@ const showHistory = ref(true)
 const showSettings = ref(false)
 
 const timerRef = ref<InstanceType<typeof TimerView> | null>(null)
+const headerRef = ref<HTMLElement | null>(null)
 
 // Update tab title with timer time
 const updateTabTitle = () => {
