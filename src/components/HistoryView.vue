@@ -43,37 +43,13 @@
         </div>
       </div>
     </div>
-
-    <!-- Backup Settings -->
-    <div class="bg-card rounded-lg p-3 shadow-sm border border-border/20">
-      <h2 class="text-sm font-bold mb-2">Backup & Restore</h2>
-      <div class="flex flex-col gap-2">
-        <button
-          @click="exportData"
-          class="w-full px-3 py-2 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors shadow-sm"
-        >
-          Export
-        </button>
-        <label class="w-full px-3 py-2 rounded-md bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors cursor-pointer text-center">
-          <input
-            type="file"
-            accept=".json"
-            @change="importData"
-            class="hidden"
-          />
-          Import
-        </label>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useHistoryStore } from '../stores/history'
-import { useSettingsStore } from '../stores/settings'
 
 const historyStore = useHistoryStore()
-const settingsStore = useSettingsStore()
 
 const formatDate = (timestamp: number) => {
   const date = new Date(timestamp)
@@ -110,57 +86,6 @@ const clearHistory = () => {
   if (confirm('Are you sure you want to clear all history?')) {
     historyStore.clearHistory()
   }
-}
-
-const exportData = () => {
-  const data = {
-    settings: settingsStore.settings,
-    history: historyStore.entries,
-    exportDate: new Date().toISOString(),
-  }
-  const dataStr = JSON.stringify(data, null, 2)
-  const dataBlob = new Blob([dataStr], { type: 'application/json' })
-  const url = URL.createObjectURL(dataBlob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `timer-backup-${Date.now()}.json`
-  link.click()
-  URL.revokeObjectURL(url)
-}
-
-const importData = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
-
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    try {
-      const data = JSON.parse(e.target?.result as string)
-      
-      if (data.settings) {
-        Object.assign(settingsStore.settings, data.settings)
-        settingsStore.saveSettings()
-        if (settingsStore.settings.theme === 'dark') {
-          document.documentElement.classList.add('dark')
-        } else {
-          document.documentElement.classList.remove('dark')
-        }
-      }
-      
-      if (data.history && Array.isArray(data.history)) {
-        historyStore.entries = data.history
-        historyStore.saveHistory()
-      }
-      
-      alert('Data imported successfully!')
-    } catch (error) {
-      alert('Failed to import data. Please check the file format.')
-      console.error('Import error', error)
-    }
-  }
-  reader.readAsText(file)
-  target.value = ''
 }
 </script>
 

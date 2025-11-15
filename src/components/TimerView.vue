@@ -3,21 +3,31 @@
     <div class="bg-card rounded-lg p-4 shadow-sm border border-border/20 flex-1 flex flex-col">
       <!-- Circular Timer Display -->
       <div class="flex flex-col items-center mb-4">
-        <div class="relative w-48 h-48 mb-4">
-          <svg class="transform -rotate-90 w-48 h-48">
+        <div
+          ref="circleContainer"
+          class="relative w-64 h-64 mb-4 cursor-grab active:cursor-grabbing select-none"
+          @mousedown="startDrag"
+          @touchstart="startDrag"
+          @mousemove="handleDrag"
+          @touchmove="handleDrag"
+          @mouseup="endDrag"
+          @mouseleave="endDrag"
+          @touchend="endDrag"
+        >
+          <svg class="transform -rotate-90 w-64 h-64">
             <circle
-              cx="96"
-              cy="96"
-              r="88"
+              cx="128"
+              cy="128"
+              r="116"
               stroke="currentColor"
               stroke-width="6"
               fill="none"
               class="text-secondary/30"
             />
             <circle
-              cx="96"
-              cy="96"
-              r="88"
+              cx="128"
+              cy="128"
+              r="116"
               stroke="currentColor"
               stroke-width="6"
               fill="none"
@@ -27,9 +37,9 @@
               stroke-linecap="round"
             />
           </svg>
-          <div class="absolute inset-0 flex items-center justify-center">
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div class="text-center">
-              <div class="text-4xl font-bold mb-1">{{ formattedTime }}</div>
+              <div class="text-5xl font-bold mb-1">{{ formattedTime }}</div>
               <div v-if="isRunning" class="text-xs text-muted-foreground">
                 {{ isPaused ? 'Paused' : 'Running' }}
               </div>
@@ -38,7 +48,14 @@
         </div>
 
         <!-- Quick Add/Subtract Buttons -->
-        <div class="flex gap-2 mb-4">
+        <div class="flex gap-2 mb-4 flex-wrap justify-center">
+          <button
+            @click="addTime(-20)"
+            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="totalSeconds < 20"
+          >
+            -20s
+          </button>
           <button
             @click="addTime(-10)"
             class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
@@ -51,6 +68,12 @@
             class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
           >
             +10s
+          </button>
+          <button
+            @click="addTime(20)"
+            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
+          >
+            +20s
           </button>
           <button
             @click="addTime(-30)"
@@ -71,13 +94,13 @@
       <!-- Timer Presets -->
       <div class="mb-4">
         <div class="text-xs font-medium mb-2 text-muted-foreground">Quick Presets</div>
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-4 gap-2">
           <button
             v-for="preset in presets"
-            :key="preset.label"
+            :key="preset.id || preset.label"
             @click="setPreset(preset.seconds)"
             :disabled="isRunning"
-            class="px-3 py-2 rounded-md bg-secondary/50 hover:bg-secondary transition-colors text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-2 py-1.5 rounded-md bg-secondary/50 hover:bg-secondary transition-colors text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ preset.label }}
           </button>
@@ -208,8 +231,10 @@ const silentOnTabOpen = ref(settingsStore.settings.silentOnTabOpen)
 
 let intervalId: number | null = null
 
-// Timer presets
-const presets = [
+// Timer presets - default + custom
+const defaultPresets = [
+  { label: '2min', seconds: 120 },
+  { label: '3min', seconds: 180 },
   { label: '5min', seconds: 300 },
   { label: '10min', seconds: 600 },
   { label: '15min', seconds: 900 },
@@ -217,6 +242,11 @@ const presets = [
   { label: '30min', seconds: 1800 },
   { label: '1hr', seconds: 3600 },
 ]
+
+const presets = computed(() => {
+  const custom = settingsStore.settings.customPresets || []
+  return [...defaultPresets, ...custom]
+})
 
 const totalSeconds = computed(() => {
   if (isRunning.value) {
@@ -235,7 +265,78 @@ const formattedTime = computed(() => {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
-const circumference = 2 * Math.PI * 88
+const circumference = 2 * Math.PI * 116
+
+// Circular drag interaction
+const circleContainer = ref<HTMLElement | null>(null)
+const isDragging = ref(false)
+const lastAngle = ref(0)
+const lastTime = ref(0)
+const rotationSpeed = ref(1)
+const consecutiveRotations = ref(0)
+
+const getAngleFromCenter = (x: number, y: number): number => {
+  if (!circleContainer.value) return 0
+  const rect = circleContainer.value.getBoundingClientRect()
+  const centerX = rect.left + rect.width / 2
+  const centerY = rect.top + rect.height / 2
+  return Math.atan2(y - centerY, x - centerX)
+}
+
+const startDrag = (e: MouseEvent | TouchEvent) => {
+  if (isRunning.value) return
+  isDragging.value = true
+  const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+  const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+  lastAngle.value = getAngleFromCenter(clientX, clientY)
+  lastTime.value = Date.now()
+  consecutiveRotations.value = 0
+  rotationSpeed.value = 1
+}
+
+const handleDrag = (e: MouseEvent | TouchEvent) => {
+  if (!isDragging.value || isRunning.value) return
+  e.preventDefault()
+  
+  const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+  const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+  const currentAngle = getAngleFromCenter(clientX, clientY)
+  
+  // Calculate angle difference
+  let angleDiff = currentAngle - lastAngle.value
+  
+  // Normalize to -π to π
+  if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI
+  if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI
+  
+  // Determine rotation direction (positive = clockwise, negative = counter-clockwise)
+  if (Math.abs(angleDiff) > 0.1) {
+    const now = Date.now()
+    const timeDiff = now - lastTime.value
+    
+    // Speed up if rotating quickly
+    if (timeDiff < 50) {
+      consecutiveRotations.value++
+      rotationSpeed.value = Math.min(5, 1 + consecutiveRotations.value * 0.2)
+    } else {
+      consecutiveRotations.value = 0
+      rotationSpeed.value = 1
+    }
+    
+    // Adjust time: clockwise = add, counter-clockwise = subtract
+    const timeAdjustment = Math.round((angleDiff > 0 ? 1 : -1) * 5 * rotationSpeed.value)
+    addTime(timeAdjustment)
+    
+    lastAngle.value = currentAngle
+    lastTime.value = now
+  }
+}
+
+const endDrag = () => {
+  isDragging.value = false
+  consecutiveRotations.value = 0
+  rotationSpeed.value = 1
+}
 const strokeDashoffset = computed(() => {
   if (initialSeconds.value === 0) return circumference
   const progress = remainingSeconds.value / initialSeconds.value

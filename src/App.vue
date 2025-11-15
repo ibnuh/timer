@@ -5,6 +5,50 @@
       <h1 class="text-xl font-bold">Timer & Stopwatch</h1>
       <div class="flex gap-2 items-center">
         <button
+          @click="showHistory = !showHistory"
+          class="p-1.5 rounded-md hover:bg-secondary transition-colors"
+          :aria-label="showHistory ? 'Hide history' : 'Show history'"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </button>
+        <button
+          @click="showSettings = true"
+          class="p-1.5 rounded-md hover:bg-secondary transition-colors"
+          aria-label="Open settings"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
+        <button
           @click="toggleTheme"
           class="p-1.5 rounded-md hover:bg-secondary transition-colors"
           :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
@@ -61,9 +105,9 @@
     </header>
 
     <!-- Main Content Area -->
-    <div class="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-3 gap-3 p-3">
+    <div class="flex-1 overflow-hidden grid grid-cols-1 gap-3 p-3" :class="showHistory ? 'lg:grid-cols-3' : 'lg:grid-cols-1'">
       <!-- Left: Timer/Stopwatch -->
-      <div class="lg:col-span-2 flex flex-col overflow-hidden min-h-0">
+      <div :class="showHistory ? 'lg:col-span-2' : 'lg:col-span-1'" class="flex flex-col overflow-hidden min-h-0">
         <!-- Tab Switcher -->
         <div class="flex gap-2 mb-2">
           <button
@@ -98,10 +142,13 @@
       </div>
 
       <!-- Right: History & Settings -->
-      <div class="lg:col-span-1 flex flex-col gap-3 overflow-hidden min-h-0">
+      <div v-if="showHistory" class="lg:col-span-1 flex flex-col gap-3 overflow-hidden min-h-0">
         <HistoryView />
       </div>
     </div>
+
+    <!-- Settings Popup -->
+    <SettingsPopup :is-open="showSettings" @close="showSettings = false" />
   </div>
 </template>
 
@@ -111,10 +158,13 @@ import { useSettingsStore } from './stores/settings'
 import TimerView from './components/TimerView.vue'
 import StopwatchView from './components/StopwatchView.vue'
 import HistoryView from './components/HistoryView.vue'
+import SettingsPopup from './components/SettingsPopup.vue'
 
 const activeTab = ref<'timer' | 'stopwatch'>('timer')
 const settingsStore = useSettingsStore()
 const isDark = ref(false)
+const showHistory = ref(true)
+const showSettings = ref(false)
 
 const timerRef = ref<InstanceType<typeof TimerView> | null>(null)
 const stopwatchRef = ref<InstanceType<typeof StopwatchView> | null>(null)

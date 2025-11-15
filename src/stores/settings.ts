@@ -1,10 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
+export interface TimerPreset {
+  label: string
+  seconds: number
+  id?: string
+}
+
 export interface Settings {
   theme: 'light' | 'dark'
   soundEnabled: boolean
   silentOnTabOpen: boolean
+  customPresets: TimerPreset[]
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -12,6 +19,7 @@ export const useSettingsStore = defineStore('settings', () => {
     theme: 'light',
     soundEnabled: true,
     silentOnTabOpen: false,
+    customPresets: [],
   })
 
   const loadSettings = () => {
@@ -45,6 +53,34 @@ export const useSettingsStore = defineStore('settings', () => {
   const setSilentOnTabOpen = (silent: boolean) => {
     settings.value.silentOnTabOpen = silent
     saveSettings()
+  }
+
+  const addCustomPreset = (preset: TimerPreset) => {
+    if (!settings.value.customPresets) {
+      settings.value.customPresets = []
+    }
+    settings.value.customPresets.push({
+      ...preset,
+      id: preset.id || Date.now().toString(),
+    })
+    saveSettings()
+  }
+
+  const removeCustomPreset = (id: string) => {
+    if (settings.value.customPresets) {
+      settings.value.customPresets = settings.value.customPresets.filter(p => p.id !== id)
+      saveSettings()
+    }
+  }
+
+  const updateCustomPreset = (id: string, preset: Partial<TimerPreset>) => {
+    if (settings.value.customPresets) {
+      const index = settings.value.customPresets.findIndex(p => p.id === id)
+      if (index !== -1) {
+        settings.value.customPresets[index] = { ...settings.value.customPresets[index], ...preset }
+        saveSettings()
+      }
+    }
   }
 
   const exportSettings = () => {
@@ -90,6 +126,9 @@ export const useSettingsStore = defineStore('settings', () => {
     setTheme,
     setSoundEnabled,
     setSilentOnTabOpen,
+    addCustomPreset,
+    removeCustomPreset,
+    updateCustomPreset,
     exportSettings,
     importSettings,
   }
