@@ -721,7 +721,7 @@ const start = () => {
       })
       
       // Request notification permission if available
-      if ('Notification' in window && Notification.permission === 'granted') {
+      if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
         new Notification('Timer Finished!', {
           body: `Your ${formattedTime.value} timer has completed.`,
           icon: '/vite.svg',
@@ -751,7 +751,7 @@ const resume = () => {
         duration: initialSeconds.value,
       })
       
-      if ('Notification' in window && Notification.permission === 'granted') {
+      if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
         new Notification('Timer Finished!', {
           body: `Your timer has completed.`,
           icon: '/vite.svg',

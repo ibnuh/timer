@@ -59,6 +59,15 @@
                 />
                 <span class="text-sm">Confirm before closing tab or window</span>
               </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  v-model="notificationsEnabled"
+                  @change="updateNotificationsSetting"
+                  class="w-4 h-4 rounded"
+                />
+                <span class="text-sm">Send browser notifications</span>
+              </label>
             </div>
           </div>
 
@@ -206,6 +215,7 @@ const historyStore = useHistoryStore()
 const soundEnabled = ref(settingsStore.settings.soundEnabled)
 const silentOnTabOpen = ref(settingsStore.settings.silentOnTabOpen)
 const confirmBeforeClose = ref(settingsStore.settings.confirmBeforeClose)
+const notificationsEnabled = ref(settingsStore.settings.notificationsEnabled)
 const showAddPreset = ref(false)
 const editingPreset = ref<TimerPreset | null>(null)
 const presetForm = ref({ label: '', seconds: 60 })
@@ -235,6 +245,10 @@ const updateSilentSetting = () => {
 
 const updateConfirmBeforeClose = () => {
   settingsStore.setConfirmBeforeClose(confirmBeforeClose.value)
+}
+
+const updateNotificationsSetting = () => {
+  settingsStore.setNotificationsEnabled(notificationsEnabled.value)
 }
 
 const adjustPresetTime = (delta: number) => {
@@ -347,6 +361,13 @@ watch(
   () => settingsStore.settings.confirmBeforeClose,
   (val) => {
     confirmBeforeClose.value = val
+  }
+)
+
+watch(
+  () => settingsStore.settings.notificationsEnabled,
+  (val) => {
+    notificationsEnabled.value = val
   }
 )
 </script>
