@@ -1,27 +1,27 @@
 <template>
-  <div class="max-w-2xl mx-auto">
-    <div class="bg-card rounded-lg p-8 shadow-lg">
+  <div class="h-full flex flex-col">
+    <div class="bg-card rounded-lg p-4 shadow-sm border border-border/20 flex-1 flex flex-col">
       <!-- Circular Stopwatch Display -->
-      <div class="flex flex-col items-center mb-8">
-        <div class="relative w-64 h-64 mb-6">
-          <svg class="transform -rotate-90 w-64 h-64">
+      <div class="flex flex-col items-center mb-4">
+        <div class="relative w-48 h-48 mb-4">
+          <svg class="transform -rotate-90 w-48 h-48">
             <circle
-              cx="128"
-              cy="128"
-              r="120"
+              cx="96"
+              cy="96"
+              r="88"
               stroke="currentColor"
-              stroke-width="8"
+              stroke-width="6"
               fill="none"
-              class="text-secondary"
+              class="text-secondary/30"
             />
           </svg>
           <div class="absolute inset-0 flex items-center justify-center">
             <div class="text-center">
-              <div class="text-5xl font-bold mb-2">{{ formattedTime }}</div>
-              <div v-if="isRunning" class="text-sm text-muted-foreground">
+              <div class="text-4xl font-bold mb-1">{{ formattedTime }}</div>
+              <div v-if="isRunning" class="text-xs text-muted-foreground">
                 Running
               </div>
-              <div v-else-if="elapsedTime > 0" class="text-sm text-muted-foreground">
+              <div v-else-if="elapsedTime > 0" class="text-xs text-muted-foreground">
                 Stopped
               </div>
             </div>
@@ -30,55 +30,55 @@
       </div>
 
       <!-- Control Buttons -->
-      <div class="flex gap-4 justify-center mb-6">
+      <div class="flex gap-2 justify-center mb-4 flex-wrap">
         <button
           v-if="!isRunning && elapsedTime === 0"
           @click="start"
-          class="px-8 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+          class="px-6 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
         >
           Start
         </button>
         <button
           v-else-if="isRunning"
           @click="stop"
-          class="px-8 py-3 rounded-lg bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 transition-colors"
+          class="px-6 py-2 rounded-md bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
         >
           Stop
         </button>
         <button
           v-else
           @click="resume"
-          class="px-8 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+          class="px-6 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
         >
           Resume
         </button>
         <button
           @click="lap"
           :disabled="!isRunning && elapsedTime === 0"
-          class="px-8 py-3 rounded-lg bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-6 py-2 rounded-md bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Lap
         </button>
         <button
           @click="reset"
           :disabled="elapsedTime === 0"
-          class="px-8 py-3 rounded-lg bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-6 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Reset
         </button>
       </div>
 
       <!-- Laps -->
-      <div v-if="laps.length > 0" class="mt-6">
-        <h3 class="font-semibold mb-4">Laps</h3>
-        <div class="space-y-2 max-h-64 overflow-y-auto">
+      <div v-if="laps.length > 0" class="flex-1 overflow-auto">
+        <h3 class="text-xs font-semibold mb-2 text-muted-foreground">Laps</h3>
+        <div class="space-y-1.5">
           <div
             v-for="(lap, index) in laps"
             :key="index"
-            class="flex justify-between items-center p-3 bg-secondary rounded-lg"
+            class="flex justify-between items-center p-2 bg-secondary/50 rounded-md text-sm"
           >
             <span class="font-medium">Lap {{ laps.length - index }}</span>
-            <span class="font-mono">{{ formatTime(lap) }}</span>
+            <span class="font-mono text-xs">{{ formatTime(lap) }}</span>
           </div>
         </div>
       </div>

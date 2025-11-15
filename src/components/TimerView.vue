@@ -1,25 +1,25 @@
 <template>
-  <div class="max-w-2xl mx-auto">
-    <div class="bg-card rounded-lg p-8 shadow-lg">
+  <div class="h-full flex flex-col">
+    <div class="bg-card rounded-lg p-4 shadow-sm border border-border/20 flex-1 flex flex-col">
       <!-- Circular Timer Display -->
-      <div class="flex flex-col items-center mb-8">
-        <div class="relative w-64 h-64 mb-6">
-          <svg class="transform -rotate-90 w-64 h-64">
+      <div class="flex flex-col items-center mb-4">
+        <div class="relative w-48 h-48 mb-4">
+          <svg class="transform -rotate-90 w-48 h-48">
             <circle
-              cx="128"
-              cy="128"
-              r="120"
+              cx="96"
+              cy="96"
+              r="88"
               stroke="currentColor"
-              stroke-width="8"
+              stroke-width="6"
               fill="none"
-              class="text-secondary"
+              class="text-secondary/30"
             />
             <circle
-              cx="128"
-              cy="128"
-              r="120"
+              cx="96"
+              cy="96"
+              r="88"
               stroke="currentColor"
-              stroke-width="8"
+              stroke-width="6"
               fill="none"
               class="text-primary transition-all duration-1000"
               :stroke-dasharray="circumference"
@@ -29,8 +29,8 @@
           </svg>
           <div class="absolute inset-0 flex items-center justify-center">
             <div class="text-center">
-              <div class="text-5xl font-bold mb-2">{{ formattedTime }}</div>
-              <div v-if="isRunning" class="text-sm text-muted-foreground">
+              <div class="text-4xl font-bold mb-1">{{ formattedTime }}</div>
+              <div v-if="isRunning" class="text-xs text-muted-foreground">
                 {{ isPaused ? 'Paused' : 'Running' }}
               </div>
             </div>
@@ -38,16 +38,16 @@
         </div>
 
         <!-- Quick Add Buttons -->
-        <div class="flex gap-2 mb-6">
+        <div class="flex gap-2 mb-4">
           <button
             @click="addTime(10)"
-            class="px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors font-medium"
+            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
           >
             +10s
           </button>
           <button
             @click="addTime(30)"
-            class="px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors font-medium"
+            class="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
           >
             +30s
           </button>
@@ -55,39 +55,39 @@
       </div>
 
       <!-- Time Input Controls -->
-      <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="grid grid-cols-3 gap-3 mb-4">
         <div>
-          <label class="block text-sm font-medium mb-2">Hours</label>
+          <label class="block text-xs font-medium mb-1.5 text-muted-foreground">Hours</label>
           <input
             v-model.number="hours"
             type="number"
             min="0"
             max="23"
-            class="w-full px-4 py-2 rounded-lg border border-input bg-background text-center text-2xl font-bold"
+            class="w-full px-3 py-2 rounded-md border border-input bg-background text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-ring"
             :disabled="isRunning"
             @input="updateTime"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-2">Minutes</label>
+          <label class="block text-xs font-medium mb-1.5 text-muted-foreground">Minutes</label>
           <input
             v-model.number="minutes"
             type="number"
             min="0"
             max="59"
-            class="w-full px-4 py-2 rounded-lg border border-input bg-background text-center text-2xl font-bold"
+            class="w-full px-3 py-2 rounded-md border border-input bg-background text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-ring"
             :disabled="isRunning"
             @input="updateTime"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-2">Seconds</label>
+          <label class="block text-xs font-medium mb-1.5 text-muted-foreground">Seconds</label>
           <input
             v-model.number="seconds"
             type="number"
             min="0"
             max="59"
-            class="w-full px-4 py-2 rounded-lg border border-input bg-background text-center text-2xl font-bold"
+            class="w-full px-3 py-2 rounded-md border border-input bg-background text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-ring"
             :disabled="isRunning"
             @input="updateTime"
           />
@@ -95,60 +95,59 @@
       </div>
 
       <!-- Control Buttons -->
-      <div class="flex gap-4 justify-center">
+      <div class="flex gap-2 justify-center mb-4">
         <button
           v-if="!isRunning"
           @click="start"
           :disabled="totalSeconds === 0"
-          class="px-8 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-6 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           Start
         </button>
         <button
           v-else-if="isPaused"
           @click="resume"
-          class="px-8 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+          class="px-6 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
         >
           Resume
         </button>
         <button
           v-else
           @click="pause"
-          class="px-8 py-3 rounded-lg bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 transition-colors"
+          class="px-6 py-2 rounded-md bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
         >
           Pause
         </button>
         <button
           @click="reset"
-          class="px-8 py-3 rounded-lg bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors"
+          class="px-6 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors"
         >
           Reset
         </button>
       </div>
-    </div>
 
-    <!-- Settings -->
-    <div class="mt-6 bg-card rounded-lg p-4 shadow">
-      <h3 class="font-semibold mb-4">Settings</h3>
-      <div class="space-y-3">
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            v-model="soundEnabled"
-            @change="updateSoundSetting"
-            class="w-4 h-4"
-          />
-          <span>Sound enabled</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            v-model="silentOnTabOpen"
-            @change="updateSilentSetting"
-            class="w-4 h-4"
-          />
-          <span>Silent when tab is not active</span>
-        </label>
+      <!-- Settings -->
+      <div class="pt-3 border-t border-border/20">
+        <div class="flex items-center justify-between text-xs">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              v-model="soundEnabled"
+              @change="updateSoundSetting"
+              class="w-3.5 h-3.5 rounded"
+            />
+            <span>Sound</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              v-model="silentOnTabOpen"
+              @change="updateSilentSetting"
+              class="w-3.5 h-3.5 rounded"
+            />
+            <span>Silent (tab inactive)</span>
+          </label>
+        </div>
       </div>
     </div>
   </div>
@@ -193,7 +192,7 @@ const formattedTime = computed(() => {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
-const circumference = 2 * Math.PI * 120
+const circumference = 2 * Math.PI * 88
 const strokeDashoffset = computed(() => {
   if (initialSeconds.value === 0) return circumference
   const progress = remainingSeconds.value / initialSeconds.value

@@ -1,94 +1,106 @@
 <template>
-  <div class="min-h-screen bg-background">
-    <div class="container mx-auto px-4 py-8">
-      <header class="mb-8">
-        <h1 class="text-4xl font-bold text-center mb-2">Timer & Stopwatch</h1>
-        <div class="flex justify-center gap-4 items-center">
-          <button
-            @click="toggleTheme"
-            class="p-2 rounded-lg hover:bg-secondary transition-colors"
-            :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-          >
-            <svg
-              v-if="isDark"
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-              />
-            </svg>
-            <svg
-              v-else
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-              />
-            </svg>
-          </button>
-          <button
-            @click="toggleFullscreen"
-            class="p-2 rounded-lg hover:bg-secondary transition-colors"
-            aria-label="Toggle fullscreen"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-              />
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      <div class="flex gap-4 mb-6 justify-center">
+  <div class="h-screen bg-background overflow-hidden flex flex-col">
+    <!-- Compact Header -->
+    <header class="flex items-center justify-between px-4 py-2 border-b border-border/20">
+      <h1 class="text-xl font-bold">Timer & Stopwatch</h1>
+      <div class="flex gap-2 items-center">
         <button
-          @click="activeTab = 'timer'"
-          :class="[
-            'px-6 py-2 rounded-lg font-medium transition-colors',
-            activeTab === 'timer'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-          ]"
+          @click="toggleTheme"
+          class="p-1.5 rounded-md hover:bg-secondary transition-colors"
+          :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
         >
-          Timer
+          <svg
+            v-if="isDark"
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+            />
+          </svg>
+          <svg
+            v-else
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+            />
+          </svg>
         </button>
         <button
-          @click="activeTab = 'stopwatch'"
-          :class="[
-            'px-6 py-2 rounded-lg font-medium transition-colors',
-            activeTab === 'stopwatch'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-          ]"
+          @click="toggleFullscreen"
+          class="p-1.5 rounded-md hover:bg-secondary transition-colors"
+          aria-label="Toggle fullscreen"
         >
-          Stopwatch
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+            />
+          </svg>
         </button>
       </div>
+    </header>
 
-      <TimerView v-if="activeTab === 'timer'" />
-      <StopwatchView v-else />
+    <!-- Main Content Area -->
+    <div class="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-3 gap-3 p-3">
+      <!-- Left: Timer/Stopwatch -->
+      <div class="lg:col-span-2 flex flex-col overflow-hidden min-h-0">
+        <!-- Tab Switcher -->
+        <div class="flex gap-2 mb-2">
+          <button
+            @click="activeTab = 'timer'"
+            :class="[
+              'px-4 py-1.5 rounded-md text-sm font-medium transition-all',
+              activeTab === 'timer'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-secondary/50 text-secondary-foreground hover:bg-secondary',
+            ]"
+          >
+            Timer
+          </button>
+          <button
+            @click="activeTab = 'stopwatch'"
+            :class="[
+              'px-4 py-1.5 rounded-md text-sm font-medium transition-all',
+              activeTab === 'stopwatch'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-secondary/50 text-secondary-foreground hover:bg-secondary',
+            ]"
+          >
+            Stopwatch
+          </button>
+        </div>
 
-      <HistoryView class="mt-8" />
+        <!-- Timer/Stopwatch View -->
+        <div class="flex-1 overflow-hidden min-h-0">
+          <TimerView v-if="activeTab === 'timer'" />
+          <StopwatchView v-else />
+        </div>
+      </div>
+
+      <!-- Right: History & Settings -->
+      <div class="lg:col-span-1 flex flex-col gap-3 overflow-hidden min-h-0">
+        <HistoryView />
+      </div>
     </div>
   </div>
 </template>
