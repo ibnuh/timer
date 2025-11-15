@@ -105,10 +105,10 @@
     </header>
 
     <!-- Main Content Area -->
-    <div class="flex-1 overflow-hidden flex">
+    <div class="flex-1 overflow-hidden flex min-h-0">
       <!-- Timer Content -->
-      <div class="flex-1 overflow-y-auto" :class="showHistory ? 'lg:mr-80' : ''">
-        <div class="container mx-auto max-w-4xl px-4 py-6">
+      <div class="flex-1 overflow-y-auto min-h-0" :class="showHistory ? 'lg:mr-80' : ''">
+        <div class="container mx-auto max-w-4xl px-4 py-4">
           <div class="flex justify-center">
             <div class="w-full max-w-2xl">
               <TimerView ref="timerRef" />

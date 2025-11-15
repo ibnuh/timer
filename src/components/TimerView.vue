@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <div class="p-6">
+    <div class="p-4">
       <!-- Circular Timer Display -->
       <div class="flex flex-col items-center mb-6">
         <div

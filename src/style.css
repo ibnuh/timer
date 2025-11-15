@@ -50,9 +50,21 @@
 }
 
 @layer base {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+  
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    margin: 0;
+    padding: 0;
+  }
+  
+  #app {
+    height: 100%;
+    overflow: hidden;
   }
   
   * {
