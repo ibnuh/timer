@@ -360,8 +360,27 @@ const updateConfirmBeforeClose = () => {
   settingsStore.setConfirmBeforeClose(confirmBeforeClose.value)
 }
 
-const updateNotificationsSetting = () => {
+const updateNotificationsSetting = async () => {
   settingsStore.setNotificationsEnabled(notificationsEnabled.value)
+  
+  // If enabling notifications, request permission if needed
+  if (notificationsEnabled.value && 'Notification' in window) {
+    if (Notification.permission === 'default') {
+      // Request permission (requires user interaction)
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        // User denied permission, disable the setting
+        notificationsEnabled.value = false
+        settingsStore.setNotificationsEnabled(false)
+        alert('Notification permission was denied. Please enable it in your browser settings to receive notifications.')
+      }
+    } else if (Notification.permission === 'denied') {
+      // Permission was previously denied, inform user
+      notificationsEnabled.value = false
+      settingsStore.setNotificationsEnabled(false)
+      alert('Notification permission is denied. Please enable it in your browser settings to receive notifications.')
+    }
+  }
 }
 
 const adjustPresetTime = (delta: number) => {

@@ -422,6 +422,62 @@ const settingsStore = useSettingsStore()
 const historyStore = useHistoryStore()
 const timerStore = useTimerStore()
 
+// Helper function to show browser notification
+const showBrowserNotification = () => {
+  // Check if notifications are enabled in settings
+  if (!settingsStore.settings.notificationsEnabled) {
+    console.log('Notifications disabled in settings')
+    return
+  }
+  
+  // Check if browser supports notifications
+  if (!('Notification' in window)) {
+    console.log('Browser does not support notifications')
+    return
+  }
+  
+  // Check permission
+  if (Notification.permission === 'denied') {
+    console.log('Notification permission denied')
+    return
+  }
+  
+  if (Notification.permission === 'default') {
+    console.log('Notification permission not yet requested, requesting now...')
+    Notification.requestPermission().then((permission) => {
+      if (permission === 'granted') {
+        showNotification()
+      } else {
+        console.log('Notification permission denied by user')
+      }
+    })
+    return
+  }
+  
+  if (Notification.permission === 'granted') {
+    showNotification()
+  }
+}
+
+const showNotification = () => {
+  try {
+    const notification = new Notification('Timer Finished!', {
+      body: `Your timer has completed.`,
+      icon: '/vite.svg',
+      tag: 'timer-finished', // Use tag to replace previous notifications
+    })
+    
+    // Auto-close notification after 5 seconds
+    setTimeout(() => {
+      notification.close()
+    }, 5000)
+    
+    console.log('Notification shown successfully')
+  } catch (error) {
+    console.error('Error showing notification:', error)
+  }
+}
+
 // Use store state
 const hours = computed({
   get: () => timerStore.hours,
@@ -782,13 +838,8 @@ const start = () => {
         duration: initialSeconds.value,
       })
       
-      // Request notification permission if available
-      if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification('Timer Finished!', {
-          body: `Your timer has completed.`,
-          icon: '/vite.svg',
-        })
-      }
+      // Show browser notification
+      showBrowserNotification()
     }
   }, 1000)
 }
@@ -816,12 +867,7 @@ const resume = () => {
         duration: initialSeconds.value,
       })
       
-      if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification('Timer Finished!', {
-          body: `Your timer has completed.`,
-          icon: '/vite.svg',
-        })
-      }
+      showBrowserNotification()
     }
   }, 1000)
 }
@@ -906,12 +952,7 @@ onMounted(() => {
           duration: initialSeconds.value,
         })
         
-        if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-          new Notification('Timer Finished!', {
-            body: `Your timer has completed.`,
-            icon: '/vite.svg',
-          })
-        }
+        showBrowserNotification()
       }
     }, 1000)
   } else if (timerStore.isPaused) {
@@ -936,12 +977,7 @@ onMounted(() => {
                 duration: initialSeconds.value,
               })
               
-              if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-                new Notification('Timer Finished!', {
-                  body: `Your timer has completed.`,
-                  icon: '/vite.svg',
-                })
-              }
+              showBrowserNotification()
             }
           }, 1000)
         }
@@ -955,12 +991,7 @@ onMounted(() => {
             duration: initialSeconds.value,
           })
           
-          if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-            new Notification('Timer Finished!', {
-              body: `Your timer has completed.`,
-              icon: '/vite.svg',
-            })
-          }
+          showBrowserNotification()
         }
         timerStore.updateTimeFromRemaining()
       } else if (initialSeconds.value > 0) {
@@ -986,12 +1017,7 @@ onMounted(() => {
                   duration: initialSeconds.value,
                 })
                 
-                if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-                  new Notification('Timer Finished!', {
-                    body: `Your timer has completed.`,
-                    icon: '/vite.svg',
-                  })
-                }
+                showBrowserNotification()
               }
             }
           } catch (e) {
