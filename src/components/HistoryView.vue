@@ -26,7 +26,9 @@
           <div class="flex items-center gap-3 flex-1 min-w-0">
             <div class="w-2 h-2 rounded-full flex-shrink-0 bg-primary" />
             <div class="min-w-0 flex-1">
-              <div class="text-sm font-semibold capitalize truncate text-foreground">Timer</div>
+              <div class="text-sm font-semibold capitalize truncate text-foreground">
+                {{ entry.label || 'Timer' }}
+              </div>
               <div class="text-xs text-foreground/70 truncate mt-0.5">
                 {{ formatDateShort(entry.timestamp) }}
               </div>

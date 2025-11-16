@@ -66,6 +66,12 @@
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
             <div class="text-center">
               <div
+                v-if="label && (isRunning || isPaused)"
+                class="text-sm font-medium text-foreground/80 mb-2 px-3 py-1 rounded-md bg-secondary/50 max-w-[200px] mx-auto truncate"
+              >
+                {{ label }}
+              </div>
+              <div
                 class="text-5xl font-bold mb-1 transition-colors duration-200"
                 :class="[
                   isDragging && rotationDirection === 'clockwise' ? 'text-primary' : '',
@@ -115,6 +121,9 @@
                     />
                   </svg>
                   <span class="text-sm font-semibold text-primary">Timer Finished!</span>
+                </div>
+                <div v-if="label" class="text-sm font-medium text-foreground/80 px-3 py-1 rounded-md bg-secondary/50 max-w-[200px] truncate">
+                  {{ label }}
                 </div>
                 <div class="text-3xl font-bold text-primary">
                   {{ formattedInitialTime }}
@@ -181,6 +190,21 @@
             +30s
           </button>
         </div>
+      </div>
+
+      <!-- Label Input -->
+      <div class="mb-6">
+        <label class="block text-sm font-semibold mb-2 text-foreground">Label</label>
+        <input
+          v-model="timerLabel"
+          @input="updateLabel"
+          @blur="updateLabel"
+          type="text"
+          placeholder="Add a label (e.g., 'Morning Meditation', 'Pomodoro 1')"
+          maxlength="50"
+          :disabled="isRunning"
+          class="w-full px-4 py-2 rounded-md bg-background border border-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        />
       </div>
 
       <!-- Timer Presets -->
@@ -481,21 +505,23 @@ const showNotification = () => {
 // Use store state
 const hours = computed({
   get: () => timerStore.hours,
-  set: (val) => timerStore.setTime(val, timerStore.minutes, timerStore.seconds)
+  set: (val: number) => timerStore.setTime(val, timerStore.minutes, timerStore.seconds)
 })
 const minutes = computed({
   get: () => timerStore.minutes,
-  set: (val) => timerStore.setTime(timerStore.hours, val, timerStore.seconds)
+  set: (val: number) => timerStore.setTime(timerStore.hours, val, timerStore.seconds)
 })
 const seconds = computed({
   get: () => timerStore.seconds,
-  set: (val) => timerStore.setTime(timerStore.hours, timerStore.minutes, val)
+  set: (val: number) => timerStore.setTime(timerStore.hours, timerStore.minutes, val)
 })
 const isRunning = computed(() => timerStore.isRunning)
 const isPaused = computed(() => timerStore.isPaused)
 const remainingSeconds = computed(() => timerStore.remainingSeconds)
 const initialSeconds = computed(() => timerStore.initialSeconds)
 const timerFinishedWhileInactive = computed(() => timerStore.timerFinishedWhileInactive)
+const label = computed(() => timerStore.label)
+const timerLabel = ref(timerStore.label || '')
 
 const soundEnabled = ref(settingsStore.settings.soundEnabled)
 const silentOnTabOpen = ref(settingsStore.settings.silentOnTabOpen)
@@ -830,17 +856,18 @@ const start = () => {
   // Start interval to tick the timer
   if (intervalId) clearInterval(intervalId)
   intervalId = window.setInterval(() => {
-    const finished = timerStore.tick()
-    if (finished) {
-      playNotification()
-      historyStore.addEntry({
-        type: 'timer',
-        duration: initialSeconds.value,
-      })
-      
-      // Show browser notification
-      showBrowserNotification()
-    }
+      const finished = timerStore.tick()
+      if (finished) {
+        playNotification()
+        historyStore.addEntry({
+          type: 'timer',
+          duration: initialSeconds.value,
+          label: label.value || undefined,
+        })
+        
+        // Show browser notification
+        showBrowserNotification()
+      }
   }, 1000)
 }
 
@@ -865,6 +892,7 @@ const resume = () => {
       historyStore.addEntry({
         type: 'timer',
         duration: initialSeconds.value,
+        label: label.value || undefined,
       })
       
       showBrowserNotification()
@@ -922,7 +950,14 @@ const updateRepeatBellsSetting = () => {
   settingsStore.setRepeatBells(repeatBells.value)
 }
 
+const updateLabel = () => {
+  timerStore.setLabel(timerLabel.value)
+}
+
 onMounted(() => {
+  // Sync label from store
+  timerLabel.value = timerStore.label || ''
+  
   // Request notification permission
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission()
@@ -950,6 +985,7 @@ onMounted(() => {
         historyStore.addEntry({
           type: 'timer',
           duration: initialSeconds.value,
+          label: label.value || undefined,
         })
         
         showBrowserNotification()
@@ -975,6 +1011,7 @@ onMounted(() => {
               historyStore.addEntry({
                 type: 'timer',
                 duration: initialSeconds.value,
+                label: label.value || undefined,
               })
               
               showBrowserNotification()
@@ -989,6 +1026,7 @@ onMounted(() => {
           historyStore.addEntry({
             type: 'timer',
             duration: initialSeconds.value,
+            label: label.value || undefined,
           })
           
           showBrowserNotification()
@@ -1015,6 +1053,7 @@ onMounted(() => {
                 historyStore.addEntry({
                   type: 'timer',
                   duration: initialSeconds.value,
+                  label: label.value || undefined,
                 })
                 
                 showBrowserNotification()
@@ -1049,15 +1088,22 @@ onMounted(() => {
 
 watch(
   () => settingsStore.settings.soundEnabled,
-  (val) => {
+  (val: boolean) => {
     soundEnabled.value = val
   }
 )
 
 watch(
   () => settingsStore.settings.silentOnTabOpen,
-  (val) => {
+  (val: boolean) => {
     silentOnTabOpen.value = val
+  }
+)
+
+watch(
+  () => timerStore.label,
+  (newLabel: string) => {
+    timerLabel.value = newLabel || ''
   }
 )
 

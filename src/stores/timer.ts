@@ -14,6 +14,7 @@ export interface TimerState {
   pausedAt: number | null // Timestamp when paused
   pausedRemaining: number | null // Remaining seconds when paused
   timerFinishedWhileInactive?: boolean // Flag to indicate timer finished while tab was inactive
+  label?: string // Label for the timer
 }
 
 const STORAGE_KEY = 'timer-state'
@@ -42,6 +43,7 @@ export const useTimerStore = defineStore('timer', () => {
   const pausedAt = ref<number | null>(null)
   const pausedRemaining = ref<number | null>(null)
   const timerFinishedWhileInactive = ref(false)
+  const label = ref<string>('')
 
   // BroadcastChannel for cross-tab communication (optional, for future features)
   let broadcastChannel: BroadcastChannel | null = null
@@ -68,6 +70,7 @@ export const useTimerStore = defineStore('timer', () => {
       pausedAt: pausedAt.value,
       pausedRemaining: pausedRemaining.value,
       timerFinishedWhileInactive: timerFinishedWhileInactive.value,
+      label: label.value || undefined,
     }
     localStorage.setItem(`${STORAGE_KEY}-${tabId.value}`, JSON.stringify(state))
   }
@@ -90,6 +93,7 @@ export const useTimerStore = defineStore('timer', () => {
       pausedAt.value = state.pausedAt
       pausedRemaining.value = state.pausedRemaining
       timerFinishedWhileInactive.value = state.timerFinishedWhileInactive || false
+      label.value = state.label || ''
 
       // If timer was running, calculate remaining time based on elapsed time
       if (state.isRunning && !state.isPaused && state.startTime) {
@@ -144,6 +148,7 @@ export const useTimerStore = defineStore('timer', () => {
     pausedAt.value = null
     pausedRemaining.value = null
     timerFinishedWhileInactive.value = false
+    label.value = ''
   }
 
   // Clear the finished indicator
@@ -222,6 +227,13 @@ export const useTimerStore = defineStore('timer', () => {
     seconds.value = 0
     remainingSeconds.value = 0
     initialSeconds.value = 0
+    label.value = ''
+    saveState()
+  }
+
+  // Set label
+  const setLabel = (newLabel: string) => {
+    label.value = newLabel.trim()
     saveState()
   }
 
@@ -312,6 +324,7 @@ export const useTimerStore = defineStore('timer', () => {
     pausedAt,
     pausedRemaining,
     timerFinishedWhileInactive,
+    label,
     
     // Methods
     start,
@@ -322,6 +335,7 @@ export const useTimerStore = defineStore('timer', () => {
     tick,
     setTime,
     addTime,
+    setLabel,
     saveState,
     loadState,
     clearState,
