@@ -40,6 +40,7 @@
               class="text-primary transition-all duration-300"
               :class="[
                 rotationDirection === 'clockwise' ? 'text-primary' : rotationDirection === 'counter-clockwise' ? 'text-accent' : '',
+                timerFinishedWhileInactive ? 'text-primary' : '',
               ]"
               :stroke-dasharray="circumference"
               :stroke-dashoffset="strokeDashoffset"
@@ -88,6 +89,50 @@
               </div>
               <div v-else class="text-xs text-muted-foreground mt-1 opacity-60">
                 Drag to adjust
+              </div>
+            </div>
+          </div>
+
+          <!-- Timer Finished Indicator Overlay -->
+          <div
+            v-if="timerFinishedWhileInactive"
+            class="absolute inset-0 flex items-center justify-center z-30 pointer-events-auto"
+          >
+            <div class="bg-background/95 backdrop-blur-sm rounded-full p-6 border-2 border-primary/50 shadow-lg max-w-[90%]">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center gap-2">
+                  <svg
+                    class="w-5 h-5 text-primary flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <span class="text-sm font-semibold text-primary">Timer Finished!</span>
+                </div>
+                <div class="text-3xl font-bold text-primary">
+                  {{ formattedInitialTime }}
+                </div>
+                <div class="flex gap-2 mt-1">
+                  <button
+                    @click="repeatTimer"
+                    class="px-4 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    Repeat
+                  </button>
+                  <button
+                    @click="timerStore.clearFinishedIndicator()"
+                    class="px-4 py-1.5 text-xs font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                  >
+                    Dismiss
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -327,57 +372,6 @@
         </button>
       </div>
 
-      <!-- Timer Finished Indicator -->
-      <div
-        v-if="timerFinishedWhileInactive"
-        class="mb-6 p-4 rounded-lg bg-primary/10 border-2 border-primary/30 flex items-center justify-between gap-4 transition-all duration-300"
-      >
-        <div class="flex items-center gap-3 flex-1">
-          <div class="flex-shrink-0">
-            <svg
-              class="w-6 h-6 text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <div class="flex-1">
-            <div class="text-base font-semibold text-primary mb-1">
-              Timer Finished!
-            </div>
-            <div class="text-sm text-foreground/70">
-              Your timer completed while this tab was inactive.
-            </div>
-          </div>
-        </div>
-        <button
-          @click="timerStore.clearFinishedIndicator()"
-          class="flex-shrink-0 p-2 rounded-md hover:bg-primary/20 transition-colors text-primary"
-          aria-label="Dismiss"
-        >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-
       <!-- Settings -->
       <div class="pt-4 border-t border-border/60">
         <div class="flex items-center justify-between text-sm mb-3">
@@ -461,6 +455,16 @@ const formattedTime = computed(() => {
   const h = Math.floor(totalSeconds.value / 3600)
   const m = Math.floor((totalSeconds.value % 3600) / 60)
   const s = totalSeconds.value % 60
+  if (h > 0) {
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+})
+
+const formattedInitialTime = computed(() => {
+  const h = Math.floor(initialSeconds.value / 3600)
+  const m = Math.floor((initialSeconds.value % 3600) / 60)
+  const s = initialSeconds.value % 60
   if (h > 0) {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   }
@@ -570,6 +574,7 @@ const rotationDots = computed(() => {
   return dots
 })
 const strokeDashoffset = computed(() => {
+  if (timerFinishedWhileInactive.value) return 0 // Show complete circle when finished
   if (initialSeconds.value === 0) return circumference
   const progress = remainingSeconds.value / initialSeconds.value
   return circumference * (1 - progress)
@@ -793,6 +798,7 @@ const resume = () => {
   intervalId = window.setInterval(() => {
     const finished = timerStore.tick()
     if (finished) {
+      // Timer finished - tick() already set the flag
       playNotification()
       historyStore.addEntry({
         type: 'timer',
@@ -820,6 +826,22 @@ const stop = () => {
 const reset = () => {
   stop()
   timerStore.reset()
+}
+
+const repeatTimer = () => {
+  // Clear the finished indicator
+  timerStore.clearFinishedIndicator()
+  
+  // Restore the time to the initial duration
+  const h = Math.floor(initialSeconds.value / 3600)
+  const remaining = initialSeconds.value % 3600
+  const m = Math.floor(remaining / 60)
+  const s = remaining % 60
+  
+  timerStore.setTime(h, m, s)
+  
+  // Start the timer
+  start()
 }
 
 const updateSoundSetting = () => {
@@ -902,8 +924,7 @@ onMounted(() => {
         // Sync the timer state (recalculate remaining time)
         const finished = timerStore.tick()
         if (finished) {
-          // Timer finished while tab was inactive
-          timerStore.timerFinishedWhileInactive = true
+          // Timer finished - tick() already set the flag if tab was inactive
           playNotification()
           historyStore.addEntry({
             type: 'timer',
@@ -918,6 +939,41 @@ onMounted(() => {
           }
         }
         timerStore.updateTimeFromRemaining()
+      } else if (initialSeconds.value > 0) {
+        // Timer might have finished while tab was inactive
+        // Check the saved state to see if timer expired
+        const saved = localStorage.getItem(`timer-state-${timerStore.tabId}`)
+        if (saved) {
+          try {
+            const state = JSON.parse(saved)
+            if (state.isRunning && state.startTime && state.initialSeconds) {
+              // Timer was running when saved, check if it expired
+              const now = Date.now()
+              const elapsed = Math.floor((now - state.startTime) / 1000)
+              if (elapsed >= state.initialSeconds) {
+                // Timer finished while tab was inactive
+                timerStore.timerFinishedWhileInactive = true
+                timerStore.saveState()
+                if (settingsStore.settings.soundEnabled && !settingsStore.settings.silentOnTabOpen) {
+                  playNotification()
+                }
+                historyStore.addEntry({
+                  type: 'timer',
+                  duration: initialSeconds.value,
+                })
+                
+                if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                  new Notification('Timer Finished!', {
+                    body: `Your timer has completed.`,
+                    icon: '/vite.svg',
+                  })
+                }
+              }
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
       }
     }
     // When page is hidden, timer continues running in background

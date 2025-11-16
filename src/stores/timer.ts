@@ -108,6 +108,7 @@ export const useTimerStore = defineStore('timer', () => {
           isRunning.value = false
           isPaused.value = false
           timerFinishedWhileInactive.value = true
+          saveState() // Save the state with the flag set
           return false
         }
       } else if (state.isPaused && state.pausedRemaining !== null) {
@@ -242,6 +243,9 @@ export const useTimerStore = defineStore('timer', () => {
         // Timer finished
         remainingSeconds.value = 0
         stop()
+        // Always set the flag when timer finishes
+        timerFinishedWhileInactive.value = true
+        saveState()
         updateTimeFromRemaining()
         return true // Signal that timer finished
       }
@@ -254,6 +258,10 @@ export const useTimerStore = defineStore('timer', () => {
     hours.value = h
     minutes.value = m
     seconds.value = s
+    // Clear finished indicator when time is changed (only if not running)
+    if (!isRunning.value) {
+      timerFinishedWhileInactive.value = false
+    }
     saveState()
   }
 
@@ -278,6 +286,8 @@ export const useTimerStore = defineStore('timer', () => {
         minutes.value = Math.floor(remaining / 60)
         seconds.value = remaining % 60
       }
+      // Clear finished indicator when time is changed (only if not running)
+      timerFinishedWhileInactive.value = false
     }
     saveState()
   }
