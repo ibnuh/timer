@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen bg-background overflow-hidden flex flex-col">
+  <div class="min-h-screen bg-background flex flex-col">
     <!-- Compact Header -->
     <header ref="headerRef" class="flex items-center justify-between px-4 py-2 border-b border-border/60 h-14 flex-shrink-0">
       <h1 class="text-xl font-bold text-foreground">Timer</h1>
@@ -123,9 +123,9 @@
     </header>
 
     <!-- Main Content Area -->
-    <div class="flex-1 overflow-hidden flex min-h-0">
+    <div class="flex-1 flex flex-col">
       <!-- Timer Content -->
-      <div class="flex-1 overflow-hidden min-h-0" :class="showHistory ? 'lg:mr-80' : ''">
+      <div class="flex-1" :class="showHistory ? 'lg:mr-80' : ''">
         <div class="container mx-auto max-w-4xl px-4 py-2">
           <div class="flex justify-center">
             <div class="w-full max-w-2xl">

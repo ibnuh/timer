@@ -52,7 +52,8 @@
 @layer base {
   html, body {
     height: 100%;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   
   body {
@@ -63,8 +64,7 @@
   }
   
   #app {
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
   }
   
   * {
