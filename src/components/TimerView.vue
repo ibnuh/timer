@@ -327,6 +327,57 @@
         </button>
       </div>
 
+      <!-- Timer Finished Indicator -->
+      <div
+        v-if="timerFinishedWhileInactive"
+        class="mb-6 p-4 rounded-lg bg-primary/10 border-2 border-primary/30 flex items-center justify-between gap-4 transition-all duration-300"
+      >
+        <div class="flex items-center gap-3 flex-1">
+          <div class="flex-shrink-0">
+            <svg
+              class="w-6 h-6 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <div class="text-base font-semibold text-primary mb-1">
+              Timer Finished!
+            </div>
+            <div class="text-sm text-foreground/70">
+              Your timer completed while this tab was inactive.
+            </div>
+          </div>
+        </div>
+        <button
+          @click="timerStore.clearFinishedIndicator()"
+          class="flex-shrink-0 p-2 rounded-md hover:bg-primary/20 transition-colors text-primary"
+          aria-label="Dismiss"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+
       <!-- Settings -->
       <div class="pt-4 border-t border-border/60">
         <div class="flex items-center justify-between text-sm mb-3">
@@ -385,6 +436,7 @@ const isRunning = computed(() => timerStore.isRunning)
 const isPaused = computed(() => timerStore.isPaused)
 const remainingSeconds = computed(() => timerStore.remainingSeconds)
 const initialSeconds = computed(() => timerStore.initialSeconds)
+const timerFinishedWhileInactive = computed(() => timerStore.timerFinishedWhileInactive)
 
 const soundEnabled = ref(settingsStore.settings.soundEnabled)
 const silentOnTabOpen = ref(settingsStore.settings.silentOnTabOpen)
@@ -787,6 +839,15 @@ onMounted(() => {
   // Add keyboard event listener
   window.addEventListener('keydown', handleKeyDown)
   
+  // Check if timer finished while inactive (on initial load)
+  if (timerStore.timerFinishedWhileInactive) {
+    // Timer already finished, indicator will be shown
+    // Play notification if enabled
+    if (settingsStore.settings.soundEnabled && !settingsStore.settings.silentOnTabOpen) {
+      playNotification()
+    }
+  }
+  
   // Restore timer if it was running
   if (timerStore.isRunning && !timerStore.isPaused) {
     // Timer was running, resume the interval
@@ -839,7 +900,23 @@ onMounted(() => {
           }, 1000)
         }
         // Sync the timer state (recalculate remaining time)
-        timerStore.tick()
+        const finished = timerStore.tick()
+        if (finished) {
+          // Timer finished while tab was inactive
+          timerStore.timerFinishedWhileInactive = true
+          playNotification()
+          historyStore.addEntry({
+            type: 'timer',
+            duration: initialSeconds.value,
+          })
+          
+          if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+            new Notification('Timer Finished!', {
+              body: `Your timer has completed.`,
+              icon: '/vite.svg',
+            })
+          }
+        }
         timerStore.updateTimeFromRemaining()
       }
     }

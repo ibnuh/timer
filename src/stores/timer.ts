@@ -13,6 +13,7 @@ export interface TimerState {
   startTime: number | null // Timestamp when timer started
   pausedAt: number | null // Timestamp when paused
   pausedRemaining: number | null // Remaining seconds when paused
+  timerFinishedWhileInactive?: boolean // Flag to indicate timer finished while tab was inactive
 }
 
 const STORAGE_KEY = 'timer-state'
@@ -40,6 +41,7 @@ export const useTimerStore = defineStore('timer', () => {
   const startTime = ref<number | null>(null)
   const pausedAt = ref<number | null>(null)
   const pausedRemaining = ref<number | null>(null)
+  const timerFinishedWhileInactive = ref(false)
 
   // BroadcastChannel for cross-tab communication (optional, for future features)
   let broadcastChannel: BroadcastChannel | null = null
@@ -65,6 +67,7 @@ export const useTimerStore = defineStore('timer', () => {
       startTime: startTime.value,
       pausedAt: pausedAt.value,
       pausedRemaining: pausedRemaining.value,
+      timerFinishedWhileInactive: timerFinishedWhileInactive.value,
     }
     localStorage.setItem(`${STORAGE_KEY}-${tabId.value}`, JSON.stringify(state))
   }
@@ -86,6 +89,7 @@ export const useTimerStore = defineStore('timer', () => {
       startTime.value = state.startTime
       pausedAt.value = state.pausedAt
       pausedRemaining.value = state.pausedRemaining
+      timerFinishedWhileInactive.value = state.timerFinishedWhileInactive || false
 
       // If timer was running, calculate remaining time based on elapsed time
       if (state.isRunning && !state.isPaused && state.startTime) {
@@ -96,12 +100,14 @@ export const useTimerStore = defineStore('timer', () => {
         if (calculatedRemaining > 0) {
           remainingSeconds.value = calculatedRemaining
           isRunning.value = true
+          timerFinishedWhileInactive.value = false
           return true // Timer should continue running
         } else {
           // Timer expired while page was closed
           remainingSeconds.value = 0
           isRunning.value = false
           isPaused.value = false
+          timerFinishedWhileInactive.value = true
           return false
         }
       } else if (state.isPaused && state.pausedRemaining !== null) {
@@ -136,6 +142,12 @@ export const useTimerStore = defineStore('timer', () => {
     startTime.value = null
     pausedAt.value = null
     pausedRemaining.value = null
+    timerFinishedWhileInactive.value = false
+  }
+
+  // Clear the finished indicator
+  const clearFinishedIndicator = () => {
+    timerFinishedWhileInactive.value = false
   }
 
   // Update time display from remaining seconds
@@ -159,6 +171,7 @@ export const useTimerStore = defineStore('timer', () => {
     startTime.value = Date.now()
     pausedAt.value = null
     pausedRemaining.value = null
+    timerFinishedWhileInactive.value = false
     saveState()
   }
 
@@ -196,6 +209,7 @@ export const useTimerStore = defineStore('timer', () => {
     startTime.value = null
     pausedAt.value = null
     pausedRemaining.value = null
+    timerFinishedWhileInactive.value = false
     saveState()
   }
 
@@ -287,6 +301,7 @@ export const useTimerStore = defineStore('timer', () => {
     startTime,
     pausedAt,
     pausedRemaining,
+    timerFinishedWhileInactive,
     
     // Methods
     start,
@@ -300,6 +315,7 @@ export const useTimerStore = defineStore('timer', () => {
     saveState,
     loadState,
     clearState,
+    clearFinishedIndicator,
     updateTimeFromRemaining,
   }
 })
