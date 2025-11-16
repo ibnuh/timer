@@ -30,6 +30,14 @@ const DEFAULT_PRESETS: TimerPreset[] = [
   { label: '1hr', seconds: 3600, id: 'default-1hr' },
 ]
 
+// Detect system theme preference
+const getSystemTheme = (): 'light' | 'dark' => {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+  return 'light'
+}
+
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<Settings>({
     theme: 'light',
@@ -37,13 +45,19 @@ export const useSettingsStore = defineStore('settings', () => {
     silentOnTabOpen: false,
     repeatBells: false,
     confirmBeforeClose: true,
-    showHistory: true,
+    showHistory: false,
     notificationsEnabled: true,
     customPresets: [],
     defaultPresets: [...DEFAULT_PRESETS],
   })
 
+  // Track if we're currently loading settings (to prevent auto-save during load)
+  let isLoadingSettings = false
+  // Track if we're updating theme from system (to prevent auto-save)
+  let isUpdatingFromSystem = false
+
   const loadSettings = () => {
+    isLoadingSettings = true
     const saved = localStorage.getItem('timer-settings')
     if (saved) {
       try {
@@ -59,16 +73,61 @@ export const useSettingsStore = defineStore('settings', () => {
       } catch (e) {
         console.error('Failed to load settings', e)
       }
+    } else {
+      // No saved settings - use system preference for theme
+      const systemTheme = getSystemTheme()
+      settings.value.theme = systemTheme
+      if (systemTheme === 'dark') {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+      // Don't save system preference - let it be detected each time if user hasn't set it
     }
+    isLoadingSettings = false
   }
 
   const saveSettings = () => {
-    localStorage.setItem('timer-settings', JSON.stringify(settings.value))
+    // Only save if not currently loading or updating from system (to avoid saving system preference)
+    if (!isLoadingSettings && !isUpdatingFromSystem) {
+      localStorage.setItem('timer-settings', JSON.stringify(settings.value))
+    }
+  }
+  
+  // Update theme from system preference (without saving)
+  const updateThemeFromSystem = () => {
+    if (!hasThemePreference()) {
+      isUpdatingFromSystem = true
+      const systemTheme = getSystemTheme()
+      settings.value.theme = systemTheme
+      if (systemTheme === 'dark') {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+      // Use nextTick to ensure watcher has processed, then reset flag
+      setTimeout(() => {
+        isUpdatingFromSystem = false
+      }, 0)
+    }
   }
 
   const setTheme = (theme: 'light' | 'dark') => {
     settings.value.theme = theme
-    saveSettings()
+    // Explicitly save when user sets theme
+    localStorage.setItem('timer-settings', JSON.stringify(settings.value))
+  }
+  
+  // Check if user has explicitly set a theme preference
+  const hasThemePreference = (): boolean => {
+    const saved = localStorage.getItem('timer-settings')
+    if (!saved) return false
+    try {
+      const loaded = JSON.parse(saved)
+      return loaded.theme !== undefined
+    } catch {
+      return false
+    }
   }
 
   const setSoundEnabled = (enabled: boolean) => {
@@ -185,6 +244,8 @@ export const useSettingsStore = defineStore('settings', () => {
     loadSettings,
     saveSettings,
     setTheme,
+    hasThemePreference,
+    updateThemeFromSystem,
     setSoundEnabled,
     setSilentOnTabOpen,
     setRepeatBells,

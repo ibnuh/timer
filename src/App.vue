@@ -185,8 +185,32 @@ onMounted(() => {
     document.documentElement.classList.remove('dark')
   }
   
-  // Load showHistory from settings
-  showHistory.value = settingsStore.settings.showHistory ?? true
+  // Load showHistory from settings (default to false)
+  showHistory.value = settingsStore.settings.showHistory ?? false
+  
+  // Listen for system theme changes and update if no user preference is set
+  let mediaQuery: MediaQueryList | null = null
+  let handleSystemThemeChange: ((e: MediaQueryListEvent) => void) | null = null
+  
+  if (window.matchMedia) {
+    mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    handleSystemThemeChange = (e: MediaQueryListEvent) => {
+      // Only update if user hasn't explicitly set a preference
+      if (!settingsStore.hasThemePreference()) {
+        // No user preference, update to match system (without saving)
+        isDark.value = e.matches
+        settingsStore.updateThemeFromSystem()
+      }
+    }
+    
+    // Modern browsers
+    if (mediaQuery.addEventListener && handleSystemThemeChange) {
+      mediaQuery.addEventListener('change', handleSystemThemeChange)
+    } else if (handleSystemThemeChange) {
+      // Fallback for older browsers
+      mediaQuery.addListener(handleSystemThemeChange)
+    }
+  }
   
   // Update tab title periodically when timer is running
   const titleInterval = setInterval(() => {
@@ -209,6 +233,15 @@ onMounted(() => {
   onUnmounted(() => {
     clearInterval(titleInterval)
     window.removeEventListener('beforeunload', handleBeforeUnload)
+    // Clean up media query listener
+    if (mediaQuery && handleSystemThemeChange) {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleSystemThemeChange)
+      } else {
+        // Fallback for older browsers
+        mediaQuery.removeListener(handleSystemThemeChange)
+      }
+    }
   })
 })
 
