@@ -1,11 +1,11 @@
 <template>
   <div class="w-full">
-    <div class="p-4 pb-2">
+    <div class="p-2">
       <!-- Circular Timer Display -->
-      <div class="flex flex-col items-center mb-6">
+      <div class="flex flex-col items-center mb-4">
         <div
           ref="circleContainer"
-          class="relative w-64 h-64 mb-6 select-none transition-all duration-200"
+          class="relative w-64 h-64 mb-4 select-none transition-all duration-200"
           :class="[
             isRunning ? 'cursor-default' : isDragging ? 'cursor-grabbing' : 'cursor-grab',
           ]"
@@ -148,7 +148,7 @@
         </div>
 
         <!-- Quick Add/Subtract Buttons -->
-        <div class="flex gap-2 mb-6 flex-wrap justify-center">
+        <div class="flex gap-2 mb-4 flex-wrap justify-center">
           <button
             @click="addTime(-30)"
             class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
@@ -192,8 +192,8 @@
       </div>
 
       <!-- Label Input -->
-      <div class="mb-4">
-        <label class="block text-sm font-semibold mb-2 text-foreground">Label</label>
+      <div class="mb-3">
+        <label class="block text-sm font-semibold mb-1.5 text-foreground">Label</label>
         <div class="relative">
           <input
             v-model="timerLabel"
@@ -231,8 +231,8 @@
       </div>
 
       <!-- Timer Presets -->
-      <div class="mb-4">
-        <div class="text-sm font-semibold mb-3 text-foreground">Quick Presets</div>
+      <div class="mb-3">
+        <div class="text-sm font-semibold mb-2 text-foreground">Quick Presets</div>
         <div class="grid grid-cols-4 gap-2">
           <button
             v-for="preset in presets"
@@ -247,10 +247,10 @@
       </div>
 
       <!-- Time Input Controls -->
-      <div class="grid grid-cols-3 gap-4 mb-4">
+      <div class="grid grid-cols-3 gap-3 mb-3">
         <!-- Hours -->
         <div class="flex flex-col">
-          <label class="block text-xs font-semibold mb-2 text-foreground/70 uppercase tracking-wide text-center">Hours</label>
+          <label class="block text-xs font-semibold mb-1.5 text-foreground/70 uppercase tracking-wide text-center">Hours</label>
           <div class="relative flex flex-col">
             <button
               @click="adjustHours(1)"
@@ -296,7 +296,7 @@
 
         <!-- Minutes -->
         <div class="flex flex-col">
-          <label class="block text-xs font-semibold mb-2 text-foreground/70 uppercase tracking-wide text-center">Minutes</label>
+          <label class="block text-xs font-semibold mb-1.5 text-foreground/70 uppercase tracking-wide text-center">Minutes</label>
           <div class="relative flex flex-col">
             <button
               @click="adjustMinutes(1)"
@@ -342,7 +342,7 @@
 
         <!-- Seconds -->
         <div class="flex flex-col">
-          <label class="block text-xs font-semibold mb-2 text-foreground/70 uppercase tracking-wide text-center">Seconds</label>
+          <label class="block text-xs font-semibold mb-1.5 text-foreground/70 uppercase tracking-wide text-center">Seconds</label>
           <div class="relative flex flex-col">
             <button
               @click="adjustSeconds(1)"
@@ -388,7 +388,7 @@
       </div>
 
       <!-- Control Buttons -->
-      <div class="flex gap-3 justify-center mb-4">
+      <div class="flex gap-3 justify-center mb-3">
         <button
           v-if="!isRunning"
           @click="start"
@@ -420,8 +420,8 @@
       </div>
 
       <!-- Settings -->
-      <div class="pt-4 border-t border-border/60">
-        <div class="flex items-center justify-between flex-wrap gap-3 text-sm mb-3">
+      <div class="pt-3 border-t border-border/60">
+        <div class="flex items-center justify-between flex-wrap gap-2 text-sm mb-2">
           <label class="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -450,7 +450,7 @@
             <span class="text-foreground font-medium">Repeat bells</span>
           </label>
         </div>
-        <div class="text-xs text-foreground/70 text-center font-medium">
+        <div class="text-xs text-foreground/70 text-center font-medium pt-1">
           Space: Start/Pause • R: Reset • Arrows: Adjust time
         </div>
       </div>
