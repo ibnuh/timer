@@ -361,18 +361,30 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { useHistoryStore } from '../stores/history'
+import { useTimerStore } from '../stores/timer'
 import { playNotification } from '../utils/sound'
 
 const settingsStore = useSettingsStore()
 const historyStore = useHistoryStore()
+const timerStore = useTimerStore()
 
-const hours = ref(0)
-const minutes = ref(0)
-const seconds = ref(0)
-const isRunning = ref(false)
-const isPaused = ref(false)
-const remainingSeconds = ref(0)
-const initialSeconds = ref(0)
+// Use store state
+const hours = computed({
+  get: () => timerStore.hours,
+  set: (val) => timerStore.setTime(val, timerStore.minutes, timerStore.seconds)
+})
+const minutes = computed({
+  get: () => timerStore.minutes,
+  set: (val) => timerStore.setTime(timerStore.hours, val, timerStore.seconds)
+})
+const seconds = computed({
+  get: () => timerStore.seconds,
+  set: (val) => timerStore.setTime(timerStore.hours, timerStore.minutes, val)
+})
+const isRunning = computed(() => timerStore.isRunning)
+const isPaused = computed(() => timerStore.isPaused)
+const remainingSeconds = computed(() => timerStore.remainingSeconds)
+const initialSeconds = computed(() => timerStore.initialSeconds)
 
 const soundEnabled = ref(settingsStore.settings.soundEnabled)
 const silentOnTabOpen = ref(settingsStore.settings.silentOnTabOpen)
@@ -512,30 +524,36 @@ const strokeDashoffset = computed(() => {
 })
 
 const updateTime = () => {
-  if (hours.value < 0) hours.value = 0
-  if (minutes.value < 0) minutes.value = 0
-  if (seconds.value < 0) seconds.value = 0
-  if (minutes.value > 59) minutes.value = 59
-  if (seconds.value > 59) seconds.value = 59
-  if (hours.value > 23) hours.value = 23
+  let h = hours.value
+  let m = minutes.value
+  let s = seconds.value
+  
+  if (h < 0) h = 0
+  if (m < 0) m = 0
+  if (s < 0) s = 0
+  if (m > 59) m = 59
+  if (s > 59) s = 59
+  if (h > 23) h = 23
+  
+  timerStore.setTime(h, m, s)
 }
 
 const adjustHours = (delta: number) => {
   if (isRunning.value) return
-  hours.value = Math.max(0, Math.min(23, hours.value + delta))
-  updateTime()
+  const newHours = Math.max(0, Math.min(23, hours.value + delta))
+  timerStore.setTime(newHours, minutes.value, seconds.value)
 }
 
 const adjustMinutes = (delta: number) => {
   if (isRunning.value) return
-  minutes.value = Math.max(0, Math.min(59, minutes.value + delta))
-  updateTime()
+  const newMinutes = Math.max(0, Math.min(59, minutes.value + delta))
+  timerStore.setTime(hours.value, newMinutes, seconds.value)
 }
 
 const adjustSeconds = (delta: number) => {
   if (isRunning.value) return
-  seconds.value = Math.max(0, Math.min(59, seconds.value + delta))
-  updateTime()
+  const newSeconds = Math.max(0, Math.min(59, seconds.value + delta))
+  timerStore.setTime(hours.value, minutes.value, newSeconds)
 }
 
 // Repeat functionality for hold-to-increase/decrease
@@ -601,31 +619,19 @@ const stopRepeat = () => {
 }
 
 const addTime = (additionalSeconds: number) => {
-  if (isRunning.value) {
-    remainingSeconds.value = Math.max(0, remainingSeconds.value + additionalSeconds)
-  } else {
-    const total = hours.value * 3600 + minutes.value * 60 + seconds.value + additionalSeconds
-    if (total < 0) {
-      hours.value = 0
-      minutes.value = 0
-      seconds.value = 0
-    } else {
-      hours.value = Math.floor(total / 3600)
-      const remaining = total % 3600
-      minutes.value = Math.floor(remaining / 60)
-      seconds.value = remaining % 60
-    }
-    updateTime()
+  timerStore.addTime(additionalSeconds)
+  if (isRunning.value && !isPaused.value) {
+    timerStore.updateTimeFromRemaining()
   }
 }
 
 const setPreset = (presetSeconds: number) => {
   if (isRunning.value) return
-  hours.value = Math.floor(presetSeconds / 3600)
+  const h = Math.floor(presetSeconds / 3600)
   const remaining = presetSeconds % 3600
-  minutes.value = Math.floor(remaining / 60)
-  seconds.value = remaining % 60
-  updateTime()
+  const m = Math.floor(remaining / 60)
+  const s = remaining % 60
+  timerStore.setTime(h, m, s)
 }
 
 // Keyboard shortcuts
@@ -695,15 +701,13 @@ const start = () => {
   if (total === 0) return
 
   stopRepeat() // Stop any ongoing repeat when starting timer
-  initialSeconds.value = total
-  remainingSeconds.value = total
-  isRunning.value = true
-  isPaused.value = false
-
+  timerStore.start()
+  
+  // Start interval to tick the timer
+  if (intervalId) clearInterval(intervalId)
   intervalId = window.setInterval(() => {
-    remainingSeconds.value--
-    if (remainingSeconds.value <= 0) {
-      stop()
+    const finished = timerStore.tick()
+    if (finished) {
       playNotification()
       historyStore.addEntry({
         type: 'timer',
@@ -713,7 +717,7 @@ const start = () => {
       // Request notification permission if available
       if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
         new Notification('Timer Finished!', {
-          body: `Your ${formattedTime.value} timer has completed.`,
+          body: `Your timer has completed.`,
           icon: '/vite.svg',
         })
       }
@@ -722,7 +726,7 @@ const start = () => {
 }
 
 const pause = () => {
-  isPaused.value = true
+  timerStore.pause()
   if (intervalId) {
     clearInterval(intervalId)
     intervalId = null
@@ -730,11 +734,13 @@ const pause = () => {
 }
 
 const resume = () => {
-  isPaused.value = false
+  timerStore.resume()
+  
+  // Resume interval
+  if (intervalId) clearInterval(intervalId)
   intervalId = window.setInterval(() => {
-    remainingSeconds.value--
-    if (remainingSeconds.value <= 0) {
-      stop()
+    const finished = timerStore.tick()
+    if (finished) {
       playNotification()
       historyStore.addEntry({
         type: 'timer',
@@ -752,8 +758,7 @@ const resume = () => {
 }
 
 const stop = () => {
-  isRunning.value = false
-  isPaused.value = false
+  timerStore.stop()
   if (intervalId) {
     clearInterval(intervalId)
     intervalId = null
@@ -762,11 +767,7 @@ const stop = () => {
 
 const reset = () => {
   stop()
-  hours.value = 0
-  minutes.value = 0
-  seconds.value = 0
-  remainingSeconds.value = 0
-  initialSeconds.value = 0
+  timerStore.reset()
 }
 
 const updateSoundSetting = () => {
@@ -785,14 +786,81 @@ onMounted(() => {
   
   // Add keyboard event listener
   window.addEventListener('keydown', handleKeyDown)
-})
-
-onUnmounted(() => {
-  if (intervalId) {
-    clearInterval(intervalId)
+  
+  // Restore timer if it was running
+  if (timerStore.isRunning && !timerStore.isPaused) {
+    // Timer was running, resume the interval
+    intervalId = window.setInterval(() => {
+      const finished = timerStore.tick()
+      if (finished) {
+        playNotification()
+        historyStore.addEntry({
+          type: 'timer',
+          duration: initialSeconds.value,
+        })
+        
+        if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Timer Finished!', {
+            body: `Your timer has completed.`,
+            icon: '/vite.svg',
+          })
+        }
+      }
+    }, 1000)
+  } else if (timerStore.isPaused) {
+    // Timer was paused, update display
+    timerStore.updateTimeFromRemaining()
   }
-  stopRepeat()
-  window.removeEventListener('keydown', handleKeyDown)
+  
+  // Handle page visibility changes
+  // Timer continues running in background, but we need to sync when page becomes visible
+  const handleVisibilityChange = () => {
+    if (!document.hidden) {
+      // Page is visible again - sync timer state
+      if (timerStore.isRunning && !timerStore.isPaused) {
+        // Ensure interval is running
+        if (!intervalId) {
+          intervalId = window.setInterval(() => {
+            const finished = timerStore.tick()
+            if (finished) {
+              playNotification()
+              historyStore.addEntry({
+                type: 'timer',
+                duration: initialSeconds.value,
+              })
+              
+              if (settingsStore.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                new Notification('Timer Finished!', {
+                  body: `Your timer has completed.`,
+                  icon: '/vite.svg',
+                })
+              }
+            }
+          }, 1000)
+        }
+        // Sync the timer state (recalculate remaining time)
+        timerStore.tick()
+        timerStore.updateTimeFromRemaining()
+      }
+    }
+    // When page is hidden, timer continues running in background
+    // The tick() function uses timestamps, so it will catch up when page becomes visible
+  }
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  // Store cleanup function
+  const cleanup = () => {
+    if (intervalId) {
+      clearInterval(intervalId)
+    }
+    stopRepeat()
+    window.removeEventListener('keydown', handleKeyDown)
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }
+  
+  // Register cleanup
+  onUnmounted(cleanup)
 })
 
 watch(
