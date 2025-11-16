@@ -98,7 +98,7 @@
             v-if="timerFinishedWhileInactive"
             class="absolute inset-0 flex items-center justify-center z-30 pointer-events-auto"
           >
-            <div class="bg-background/95 backdrop-blur-sm rounded-full p-6 border-2 border-primary/50 shadow-lg max-w-[90%]">
+            <div class="bg-background/95 backdrop-blur-sm rounded-full p-6 max-w-[90%]">
               <div class="flex flex-col items-center gap-3">
                 <div class="flex items-center gap-2">
                   <svg
@@ -119,7 +119,7 @@
                 <div class="text-3xl font-bold text-primary">
                   {{ formattedInitialTime }}
                 </div>
-                <div class="flex gap-2 mt-1">
+                <div class="flex gap-2 mt-1 flex-col">
                   <button
                     @click="repeatTimer"
                     class="px-4 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
