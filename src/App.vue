@@ -151,59 +151,70 @@
           <HistoryView />
         </div>
       </div>
-    </div>
 
-    <!-- Keyboard Shortcuts Display (Bottom Left) -->
-    <div class="fixed bottom-2 left-2 sm:bottom-4 sm:left-4 z-40 pointer-events-none max-w-[calc(100vw-1rem)] sm:max-w-none">
-      <div 
-        class="bg-background/90 backdrop-blur-sm border border-border/60 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 shadow-lg transition-all duration-200"
-        :class="timerFinished ? 'border-primary/50 shadow-primary/20' : ''"
-      >
-        <!-- Mobile: Compact single line -->
-        <div class="sm:hidden">
+      <!-- Keyboard Shortcuts Display for Mobile (at bottom of content) -->
+      <div class="lg:hidden w-full border-t border-border/60 bg-background/50">
+        <div class="container mx-auto max-w-4xl px-4 py-3">
           <div 
-            class="text-[9px] font-medium text-left leading-tight"
+            class="text-xs font-medium text-center"
             :class="timerFinished ? 'text-primary' : 'text-foreground/70'"
           >
-            <div class="flex items-center gap-1 flex-wrap">
-              <kbd class="px-1 py-0.5 bg-secondary/50 rounded text-[9px] font-mono">Space</kbd>
-              <span>Start/Pause</span>
+            <div class="flex items-center justify-center gap-2 flex-wrap">
+              <div class="flex items-center gap-1">
+                <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">Space</kbd>
+                <span>Start/Pause</span>
+              </div>
               <span class="text-foreground/30">•</span>
-              <kbd class="px-1 py-0.5 bg-secondary/50 rounded text-[9px] font-mono">R</kbd>
-              <span>Reset</span>
+              <div class="flex items-center gap-1">
+                <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">R</kbd>
+                <span>Reset</span>
+              </div>
               <span class="text-foreground/30">•</span>
-              <kbd class="px-1 py-0.5 bg-secondary/50 rounded text-[9px] font-mono">↑↓</kbd>
-              <span>Adj</span>
+              <div class="flex items-center gap-1">
+                <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">↑↓</kbd>
+                <span>Seconds</span>
+              </div>
+              <span class="text-foreground/30">•</span>
+              <div class="flex items-center gap-1">
+                <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">←→</kbd>
+                <span>Minutes</span>
+              </div>
             </div>
           </div>
         </div>
-        <!-- Desktop: Full details -->
-        <div class="hidden sm:block">
-          <div 
-            class="text-xs font-medium space-y-1 text-left leading-tight"
-            :class="timerFinished ? 'text-primary' : 'text-foreground/70'"
-          >
-            <div class="flex items-center gap-1.5">
-              <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">Space</kbd>
-              <span>Start/Pause</span>
-              <span class="text-foreground/40">•</span>
-              <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">R</kbd>
-              <span>Reset</span>
-            </div>
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">↑↓</kbd>
-              <span>Seconds</span>
-              <span class="text-foreground/40">•</span>
-              <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">←→</kbd>
-              <span>Minutes</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">R</kbd>
-              <span>Repeat</span>
-              <span class="text-foreground/40">•</span>
-              <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">D</kbd>
-              <span>Dismiss</span>
-            </div>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Display for Desktop (Floating Bottom Left) -->
+    <div class="hidden lg:block fixed bottom-4 left-4 z-40 pointer-events-none">
+      <div 
+        class="bg-background/90 backdrop-blur-sm border border-border/60 rounded-lg px-3 py-2 shadow-lg transition-all duration-200"
+        :class="timerFinished ? 'border-primary/50 shadow-primary/20' : ''"
+      >
+        <div 
+          class="text-xs font-medium space-y-1 text-left leading-tight"
+          :class="timerFinished ? 'text-primary' : 'text-foreground/70'"
+        >
+          <div class="flex items-center gap-1.5">
+            <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">Space</kbd>
+            <span>Start/Pause</span>
+            <span class="text-foreground/40">•</span>
+            <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">R</kbd>
+            <span>Reset</span>
+          </div>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">↑↓</kbd>
+            <span>Seconds</span>
+            <span class="text-foreground/40">•</span>
+            <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">←→</kbd>
+            <span>Minutes</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">R</kbd>
+            <span>Repeat</span>
+            <span class="text-foreground/40">•</span>
+            <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">D</kbd>
+            <span>Dismiss</span>
           </div>
         </div>
       </div>
