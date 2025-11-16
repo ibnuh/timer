@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <div class="p-4">
+    <div class="p-4 pb-2">
       <!-- Circular Timer Display -->
       <div class="flex flex-col items-center mb-6">
         <div
@@ -104,44 +104,43 @@
             v-if="timerFinishedWhileInactive"
             class="absolute inset-0 flex items-center justify-center z-30 pointer-events-auto"
           >
-            <div class="bg-background/95 backdrop-blur-sm rounded-full p-6 max-w-[90%]">
-              <div class="flex flex-col items-center gap-3">
-                <div class="flex items-center gap-2">
-                  <svg
-                    class="w-5 h-5 text-primary flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <span class="text-sm font-semibold text-primary">Timer Finished!</span>
-                </div>
-                <div v-if="label" class="text-sm font-medium text-foreground/80 px-3 py-1 rounded-md bg-secondary/50 max-w-[200px] truncate">
-                  {{ label }}
-                </div>
-                <div class="text-3xl font-bold text-primary">
-                  {{ formattedInitialTime }}
-                </div>
-                <div class="flex gap-2 mt-1 flex-col">
-                  <button
-                    @click="repeatTimer"
-                    class="px-4 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                  >
-                    Repeat
-                  </button>
-                  <button
-                    @click="dismissFinished"
-                    class="px-4 py-1.5 text-xs font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
-                  >
-                    Dismiss
-                  </button>
-                </div>
+            <div class="absolute inset-0 bg-background/95 backdrop-blur-sm rounded-full"></div>
+            <div class="relative z-10 flex flex-col items-center gap-3">
+              <div class="flex items-center gap-2">
+                <svg
+                  class="w-5 h-5 text-primary flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span class="text-sm font-semibold text-primary">Timer Finished!</span>
+              </div>
+              <div v-if="label" class="text-sm font-medium text-foreground/80 px-3 py-1 rounded-md bg-secondary/50 max-w-[200px] truncate">
+                {{ label }}
+              </div>
+              <div class="text-3xl font-bold text-primary">
+                {{ formattedInitialTime }}
+              </div>
+              <div class="flex gap-2 mt-1 flex-col">
+                <button
+                  @click="repeatTimer"
+                  class="px-4 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Repeat
+                </button>
+                <button
+                  @click="dismissFinished"
+                  class="px-4 py-1.5 text-xs font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                >
+                  Dismiss
+                </button>
               </div>
             </div>
           </div>
@@ -193,22 +192,46 @@
       </div>
 
       <!-- Label Input -->
-      <div class="mb-6">
+      <div class="mb-4">
         <label class="block text-sm font-semibold mb-2 text-foreground">Label</label>
-        <input
-          v-model="timerLabel"
-          @input="updateLabel"
-          @blur="updateLabel"
-          type="text"
-          placeholder="Add a label (e.g., 'Morning Meditation', 'Pomodoro 1')"
-          maxlength="50"
-          :disabled="isRunning"
-          class="w-full px-4 py-2 rounded-md bg-background border border-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        />
+        <div class="relative">
+          <input
+            v-model="timerLabel"
+            @input="updateLabel"
+            @blur="updateLabel"
+            type="text"
+            placeholder="Add a label (e.g., 'Morning Meditation', 'Pomodoro 1')"
+            maxlength="50"
+            :disabled="isRunning"
+            class="w-full px-4 py-2 pr-10 rounded-md bg-background border border-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          <button
+            v-if="timerLabel"
+            @click="clearLabel"
+            type="button"
+            :disabled="isRunning"
+            class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Clear label"
+          >
+            <svg
+              class="w-4 h-4 text-foreground/60"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Timer Presets -->
-      <div class="mb-6">
+      <div class="mb-4">
         <div class="text-sm font-semibold mb-3 text-foreground">Quick Presets</div>
         <div class="grid grid-cols-4 gap-2">
           <button
@@ -224,7 +247,7 @@
       </div>
 
       <!-- Time Input Controls -->
-      <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="grid grid-cols-3 gap-4 mb-4">
         <!-- Hours -->
         <div class="flex flex-col">
           <label class="block text-xs font-semibold mb-2 text-foreground/70 uppercase tracking-wide text-center">Hours</label>
@@ -365,7 +388,7 @@
       </div>
 
       <!-- Control Buttons -->
-      <div class="flex gap-3 justify-center mb-6">
+      <div class="flex gap-3 justify-center mb-4">
         <button
           v-if="!isRunning"
           @click="start"
@@ -952,6 +975,11 @@ const updateRepeatBellsSetting = () => {
 
 const updateLabel = () => {
   timerStore.setLabel(timerLabel.value)
+}
+
+const clearLabel = () => {
+  timerLabel.value = ''
+  timerStore.setLabel('')
 }
 
 onMounted(() => {
