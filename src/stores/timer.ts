@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 export interface TimerState {
   tabId: string
@@ -49,7 +49,7 @@ export const useTimerStore = defineStore('timer', () => {
   let broadcastChannel: BroadcastChannel | null = null
   if (typeof BroadcastChannel !== 'undefined') {
     broadcastChannel = new BroadcastChannel('timer-sync')
-    broadcastChannel.onmessage = (event) => {
+    broadcastChannel.onmessage = (_event) => {
       // Handle cross-tab messages if needed in the future
       // For now, we keep tabs independent
     }

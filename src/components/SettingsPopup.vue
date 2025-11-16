@@ -329,7 +329,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useHistoryStore } from '../stores/history'
 import type { TimerPreset } from '../stores/settings'
 
-const props = defineProps<{
+defineProps<{
   isOpen: boolean
 }>()
 

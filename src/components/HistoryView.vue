@@ -46,17 +46,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useHistoryStore } from '../stores/history'
+import type { HistoryEntry } from '../stores/history'
 
 const historyStore = useHistoryStore()
 
 const timerEntries = computed(() => {
-  return historyStore.entries.filter(e => e.type === 'timer')
+  return historyStore.entries.filter((e: HistoryEntry) => e.type === 'timer')
 })
-
-const formatDate = (timestamp: number) => {
-  const date = new Date(timestamp)
-  return date.toLocaleString()
-}
 
 const formatDateShort = (timestamp: number) => {
   const date = new Date(timestamp)
