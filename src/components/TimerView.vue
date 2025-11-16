@@ -7,7 +7,7 @@
           ref="circleContainer"
           class="relative w-64 h-64 mb-6 select-none transition-all duration-200"
           :class="[
-            isDragging ? 'cursor-grabbing' : 'cursor-grab',
+            isRunning ? 'cursor-default' : isDragging ? 'cursor-grabbing' : 'cursor-grab',
           ]"
           @mousedown="startDrag"
           @touchstart="startDrag"
