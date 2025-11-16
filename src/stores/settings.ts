@@ -11,6 +11,7 @@ export interface Settings {
   theme: 'light' | 'dark'
   soundEnabled: boolean
   silentOnTabOpen: boolean
+  repeatBells: boolean
   confirmBeforeClose: boolean
   showHistory: boolean
   notificationsEnabled: boolean
@@ -34,6 +35,7 @@ export const useSettingsStore = defineStore('settings', () => {
     theme: 'light',
     soundEnabled: true,
     silentOnTabOpen: false,
+    repeatBells: false,
     confirmBeforeClose: true,
     showHistory: true,
     notificationsEnabled: true,
@@ -76,6 +78,11 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const setSilentOnTabOpen = (silent: boolean) => {
     settings.value.silentOnTabOpen = silent
+    saveSettings()
+  }
+
+  const setRepeatBells = (repeat: boolean) => {
+    settings.value.repeatBells = repeat
     saveSettings()
   }
 
@@ -180,6 +187,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setTheme,
     setSoundEnabled,
     setSilentOnTabOpen,
+    setRepeatBells,
     setConfirmBeforeClose,
     setShowHistory,
     setNotificationsEnabled,

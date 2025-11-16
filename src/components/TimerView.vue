@@ -127,7 +127,7 @@
                     Repeat
                   </button>
                   <button
-                    @click="timerStore.clearFinishedIndicator()"
+                    @click="dismissFinished"
                     class="px-4 py-1.5 text-xs font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
                   >
                     Dismiss
@@ -407,7 +407,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { useHistoryStore } from '../stores/history'
 import { useTimerStore } from '../stores/timer'
-import { playNotification } from '../utils/sound'
+import { playNotification, stopRepeatingBells } from '../utils/sound'
 
 const settingsStore = useSettingsStore()
 const historyStore = useHistoryStore()
@@ -758,6 +758,7 @@ const start = () => {
   if (total === 0) return
 
   stopRepeat() // Stop any ongoing repeat when starting timer
+  stopRepeatingBells() // Stop any repeating bells from previous timer
   timerStore.start()
   
   // Start interval to tick the timer
@@ -825,10 +826,19 @@ const stop = () => {
 
 const reset = () => {
   stop()
+  stopRepeatingBells()
   timerStore.reset()
 }
 
+const dismissFinished = () => {
+  stopRepeatingBells()
+  timerStore.clearFinishedIndicator()
+}
+
 const repeatTimer = () => {
+  // Stop repeating bells
+  stopRepeatingBells()
+  
   // Clear the finished indicator
   timerStore.clearFinishedIndicator()
   
@@ -988,6 +998,7 @@ onMounted(() => {
       clearInterval(intervalId)
     }
     stopRepeat()
+    stopRepeatingBells()
     window.removeEventListener('keydown', handleKeyDown)
     document.removeEventListener('visibilitychange', handleVisibilityChange)
   }

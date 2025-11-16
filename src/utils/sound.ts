@@ -1,6 +1,8 @@
 import { useSettingsStore } from '../stores/settings'
 
 let audioContext: AudioContext | null = null
+let repeatTimeoutId: number | null = null
+let repeatIntervalId: number | null = null
 
 const initAudioContext = () => {
   if (!audioContext) {
@@ -42,9 +44,46 @@ export const playBeep = (frequency = 800, duration = 200) => {
   }
 }
 
-export const playNotification = () => {
+const playNotificationSequence = () => {
   playBeep(600, 300)
   setTimeout(() => playBeep(800, 300), 300)
   setTimeout(() => playBeep(1000, 400), 600)
+}
+
+export const playNotification = () => {
+  const settingsStore = useSettingsStore()
+  
+  // Stop any existing repeat
+  stopRepeatingBells()
+  
+  // Play the notification sequence
+  playNotificationSequence()
+  
+  // If repeat bells is enabled, start repeating
+  if (settingsStore.settings.repeatBells) {
+    // Start repeating after the initial sequence completes (about 1 second)
+    repeatTimeoutId = window.setTimeout(() => {
+      repeatIntervalId = window.setInterval(() => {
+        // Check if repeat bells is still enabled
+        const currentSettings = useSettingsStore()
+        if (!currentSettings.settings.repeatBells) {
+          stopRepeatingBells()
+          return
+        }
+        playNotificationSequence()
+      }, 2000) // Repeat every 2 seconds
+    }, 1000)
+  }
+}
+
+export const stopRepeatingBells = () => {
+  if (repeatTimeoutId !== null) {
+    clearTimeout(repeatTimeoutId)
+    repeatTimeoutId = null
+  }
+  if (repeatIntervalId !== null) {
+    clearInterval(repeatIntervalId)
+    repeatIntervalId = null
+  }
 }
 

@@ -51,6 +51,15 @@
                   />
                   <span class="text-sm group-hover:text-foreground transition-colors">Silent when tab is not active</span>
                 </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    v-model="repeatBells"
+                    @change="updateRepeatBellsSetting"
+                    class="w-5 h-5 rounded border-input cursor-pointer"
+                  />
+                  <span class="text-sm group-hover:text-foreground transition-colors">Repeat bells</span>
+                </label>
               </div>
             </div>
 
@@ -311,6 +320,7 @@ const historyStore = useHistoryStore()
 
 const soundEnabled = ref(settingsStore.settings.soundEnabled)
 const silentOnTabOpen = ref(settingsStore.settings.silentOnTabOpen)
+const repeatBells = ref(settingsStore.settings.repeatBells)
 const confirmBeforeClose = ref(settingsStore.settings.confirmBeforeClose)
 const notificationsEnabled = ref(settingsStore.settings.notificationsEnabled)
 const showAddPreset = ref(false)
@@ -340,6 +350,10 @@ const updateSoundSetting = () => {
 
 const updateSilentSetting = () => {
   settingsStore.setSilentOnTabOpen(silentOnTabOpen.value)
+}
+
+const updateRepeatBellsSetting = () => {
+  settingsStore.setRepeatBells(repeatBells.value)
 }
 
 const updateConfirmBeforeClose = () => {
@@ -465,6 +479,13 @@ watch(
   () => settingsStore.settings.silentOnTabOpen,
   (val: boolean) => {
     silentOnTabOpen.value = val
+  }
+)
+
+watch(
+  () => settingsStore.settings.repeatBells,
+  (val: boolean) => {
+    repeatBells.value = val
   }
 )
 
