@@ -374,7 +374,7 @@
 
       <!-- Settings -->
       <div class="pt-4 border-t border-border/60">
-        <div class="flex items-center justify-between text-sm mb-3">
+        <div class="flex items-center justify-between flex-wrap gap-3 text-sm mb-3">
           <label class="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -391,7 +391,16 @@
               @change="updateSilentSetting"
               class="w-4 h-4 rounded border-2 border-input checked:bg-primary checked:border-primary"
             />
-            <span class="text-foreground font-medium">Silent (tab inactive)</span>
+            <span class="text-foreground font-medium">Silent when tab is not active</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              v-model="repeatBells"
+              @change="updateRepeatBellsSetting"
+              class="w-4 h-4 rounded border-2 border-input checked:bg-primary checked:border-primary"
+            />
+            <span class="text-foreground font-medium">Repeat bells</span>
           </label>
         </div>
         <div class="text-xs text-foreground/70 text-center font-medium">
@@ -434,6 +443,7 @@ const timerFinishedWhileInactive = computed(() => timerStore.timerFinishedWhileI
 
 const soundEnabled = ref(settingsStore.settings.soundEnabled)
 const silentOnTabOpen = ref(settingsStore.settings.silentOnTabOpen)
+const repeatBells = ref(settingsStore.settings.repeatBells)
 
 let intervalId: number | null = null
 
@@ -860,6 +870,10 @@ const updateSoundSetting = () => {
 
 const updateSilentSetting = () => {
   settingsStore.setSilentOnTabOpen(silentOnTabOpen.value)
+}
+
+const updateRepeatBellsSetting = () => {
+  settingsStore.setRepeatBells(repeatBells.value)
 }
 
 onMounted(() => {
