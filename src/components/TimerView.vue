@@ -450,9 +450,6 @@
             <span class="text-foreground font-medium">Repeat bells</span>
           </label>
         </div>
-        <div class="text-xs text-foreground/70 text-center font-medium pt-1">
-          Space: Start/Pause • R: Reset • Arrows: Adjust time
-        </div>
       </div>
     </div>
   </div>
@@ -831,10 +828,22 @@ const handleKeyDown = (e: KeyboardEvent) => {
     return
   }
 
-  // R: Reset
+  // R: Reset (or Repeat when timer finished)
   if (e.key === 'r' || e.key === 'R') {
     e.preventDefault()
-    reset()
+    if (timerFinishedWhileInactive.value) {
+      repeatTimer()
+    } else {
+      reset()
+    }
+    return
+  }
+
+  // D: Dismiss (when timer finished)
+  if (timerFinishedWhileInactive.value && (e.key === 'd' || e.key === 'D' || e.code === 'KeyD')) {
+    e.preventDefault()
+    e.stopPropagation()
+    dismissFinished()
     return
   }
 

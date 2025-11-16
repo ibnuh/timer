@@ -203,6 +203,27 @@ export const useSettingsStore = defineStore('settings', () => {
     saveSettings()
   }
 
+  const resetToDefaults = () => {
+    const systemTheme = getSystemTheme()
+    settings.value = {
+      theme: systemTheme,
+      soundEnabled: true,
+      silentOnTabOpen: false,
+      repeatBells: false,
+      confirmBeforeClose: true,
+      showHistory: false,
+      notificationsEnabled: true,
+      customPresets: [],
+      defaultPresets: [...DEFAULT_PRESETS],
+    }
+    if (systemTheme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+    saveSettings()
+  }
+
   const exportSettings = () => {
     const dataStr = JSON.stringify(settings.value, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
@@ -257,6 +278,7 @@ export const useSettingsStore = defineStore('settings', () => {
     updateCustomPreset,
     updateDefaultPreset,
     resetDefaultPresets,
+    resetToDefaults,
     exportSettings,
     importSettings,
   }

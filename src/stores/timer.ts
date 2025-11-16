@@ -154,6 +154,7 @@ export const useTimerStore = defineStore('timer', () => {
   // Clear the finished indicator
   const clearFinishedIndicator = () => {
     timerFinishedWhileInactive.value = false
+    saveState()
   }
 
   // Update time display from remaining seconds

@@ -135,25 +135,41 @@
       </div>
     </div>
 
+    <!-- Keyboard Shortcuts Display (Bottom Left) -->
+    <div class="fixed bottom-4 left-4 z-40 pointer-events-none">
+      <div 
+        class="text-xs font-medium space-y-1 text-left transition-colors duration-200"
+        :class="timerFinished ? 'text-primary' : 'text-foreground/70'"
+      >
+        <div>Space: Start/Pause • R: Reset</div>
+        <div>↑/↓: Adjust seconds • ←/→: Adjust minutes</div>
+        <div>R: Repeat • D: Dismiss (when finished)</div>
+      </div>
+    </div>
+
     <!-- Settings Popup -->
     <SettingsPopup :is-open="showSettings" @close="showSettings = false" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useSettingsStore } from './stores/settings'
+import { useTimerStore } from './stores/timer'
 import TimerView from './components/TimerView.vue'
 import HistoryView from './components/HistoryView.vue'
 import SettingsPopup from './components/SettingsPopup.vue'
 
 const settingsStore = useSettingsStore()
+const timerStore = useTimerStore()
 const isDark = ref(false)
 const showHistory = ref(true)
 const showSettings = ref(false)
 
 const timerRef = ref<InstanceType<typeof TimerView> | null>(null)
 const headerRef = ref<HTMLElement | null>(null)
+
+const timerFinished = computed(() => timerStore.timerFinishedWhileInactive)
 
 // Update tab title with timer time
 const updateTabTitle = () => {

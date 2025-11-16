@@ -264,7 +264,7 @@
           </div>
 
           <!-- Backup & Restore -->
-          <div class="bg-secondary/30 rounded-lg p-5">
+          <div class="bg-secondary/30 rounded-lg p-5 mb-6">
             <h3 class="text-base font-semibold mb-4 flex items-center gap-2">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -294,6 +294,28 @@
                 Import Settings & History
               </label>
             </div>
+          </div>
+
+          <!-- Reset Data -->
+          <div class="bg-destructive/10 rounded-lg p-5 border border-destructive/20">
+            <h3 class="text-base font-semibold mb-4 flex items-center gap-2 text-destructive">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Reset Data
+            </h3>
+            <p class="text-sm text-muted-foreground mb-4">
+              This will permanently delete all your settings, history, presets, and timer states. This action cannot be undone.
+            </p>
+            <button
+              @click="resetAllData"
+              class="w-full px-4 py-3 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors flex items-center justify-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Reset Entire Site Data
+            </button>
           </div>
         </div>
       </div>
@@ -480,6 +502,37 @@ const importData = (event: Event) => {
   }
   reader.readAsText(file)
   target.value = ''
+}
+
+const resetAllData = () => {
+  const confirmMessage = 'Are you sure you want to reset ALL data?\n\nThis will permanently delete:\n- All settings\n- All history\n- All presets\n- All timer states\n\nThis action cannot be undone!'
+  
+  if (confirm(confirmMessage)) {
+    // Clear all localStorage items
+    const keysToRemove: string[] = []
+    
+    // Find all timer state keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.startsWith('timer-state-') || key === 'timer-settings' || key === 'timer-history' || key.startsWith('timer-tab-id'))) {
+        keysToRemove.push(key)
+      }
+    }
+    
+    // Remove all found keys
+    keysToRemove.forEach(key => localStorage.removeItem(key))
+    
+    // Clear sessionStorage
+    sessionStorage.clear()
+    
+    // Reset stores
+    settingsStore.resetToDefaults()
+    historyStore.clearHistory()
+    
+    // Reload the page to apply changes
+    alert('All data has been reset. The page will now reload.')
+    window.location.reload()
+  }
 }
 
 const close = () => {
