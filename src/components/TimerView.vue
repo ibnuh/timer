@@ -200,7 +200,7 @@
             @input="updateLabel"
             @blur="updateLabel"
             type="text"
-            placeholder="Add a label (e.g., 'Morning Meditation', 'Pomodoro 1')"
+            placeholder="Add a label"
             maxlength="50"
             :disabled="isRunning"
             class="w-full px-4 py-2 pr-10 rounded-md bg-background border border-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all disabled:opacity-50 disabled:cursor-not-allowed"
