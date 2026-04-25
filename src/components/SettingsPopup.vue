@@ -5,11 +5,18 @@
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       @click.self="close"
     >
-      <div class="bg-card rounded-lg shadow-lg border border-border/20 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col m-4">
+      <div
+        ref="dialogRef"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
+        class="bg-card rounded-lg shadow-lg border border-border/20 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col m-4"
+      >
         <!-- Header -->
         <div class="flex items-center justify-between p-6 border-b border-border/20">
-          <h2 class="text-xl font-bold">Settings</h2>
+          <h2 id="settings-title" class="text-xl font-bold">Settings</h2>
           <button
+            ref="closeButtonRef"
             @click="close"
             class="p-2 rounded-md hover:bg-secondary transition-colors"
             aria-label="Close settings"
@@ -22,7 +29,7 @@
 
         <!-- Content -->
         <div class="flex-1 overflow-y-auto p-6">
-          <!-- Settings Grid: Sound & General Side by Side -->
+          <!-- Settings Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <!-- Sound Settings -->
             <div class="bg-secondary/30 rounded-lg p-4">
@@ -324,12 +331,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { useHistoryStore } from '../stores/history'
 import type { TimerPreset } from '../stores/settings'
+import { formatPresetTime } from '../utils/timeFormatter'
 
-defineProps<{
+const props = defineProps<{
   isOpen: boolean
 }>()
 
@@ -350,21 +358,12 @@ const editingPreset = ref<TimerPreset | null>(null)
 const isEditingDefault = ref(false)
 const presetForm = ref({ label: '', seconds: 60 })
 
+const dialogRef = ref<HTMLElement | null>(null)
+const closeButtonRef = ref<HTMLButtonElement | null>(null)
+const previouslyFocusedElement = ref<HTMLElement | null>(null)
+
 const defaultPresets = computed(() => settingsStore.settings.defaultPresets || [])
 const customPresets = computed(() => settingsStore.settings.customPresets || [])
-
-const formatPresetTime = (seconds: number) => {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${secs}s`
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${secs}s`
-  }
-  return `${secs}s`
-}
 
 const updateSoundSetting = () => {
   settingsStore.setSoundEnabled(soundEnabled.value)
@@ -384,20 +383,16 @@ const updateConfirmBeforeClose = () => {
 
 const updateNotificationsSetting = async () => {
   settingsStore.setNotificationsEnabled(notificationsEnabled.value)
-  
-  // If enabling notifications, request permission if needed
+
   if (notificationsEnabled.value && 'Notification' in window) {
     if (Notification.permission === 'default') {
-      // Request permission (requires user interaction)
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') {
-        // User denied permission, disable the setting
         notificationsEnabled.value = false
         settingsStore.setNotificationsEnabled(false)
         alert('Notification permission was denied. Please enable it in your browser settings to receive notifications.')
       }
     } else if (Notification.permission === 'denied') {
-      // Permission was previously denied, inform user
       notificationsEnabled.value = false
       settingsStore.setNotificationsEnabled(false)
       alert('Notification permission is denied. Please enable it in your browser settings to receive notifications.')
@@ -413,7 +408,7 @@ const savePreset = () => {
   if (!presetForm.value.label.trim() || presetForm.value.seconds <= 0) {
     return
   }
-  
+
   if (editingPreset.value) {
     if (isEditingDefault.value) {
       settingsStore.updateDefaultPreset(editingPreset.value.id!, presetForm.value)
@@ -423,7 +418,7 @@ const savePreset = () => {
   } else {
     settingsStore.addCustomPreset(presetForm.value)
   }
-  
+
   cancelPresetEdit()
 }
 
@@ -478,7 +473,7 @@ const importData = (event: Event) => {
   reader.onload = (e) => {
     try {
       const data = JSON.parse(e.target?.result as string)
-      
+
       if (data.settings) {
         Object.assign(settingsStore.settings, data.settings)
         settingsStore.saveSettings()
@@ -488,12 +483,12 @@ const importData = (event: Event) => {
           document.documentElement.classList.remove('dark')
         }
       }
-      
+
       if (data.history && Array.isArray(data.history)) {
         historyStore.entries = data.history
         historyStore.saveHistory()
       }
-      
+
       alert('Data imported successfully!')
     } catch (error) {
       alert('Failed to import data. Please check the file format.')
@@ -506,30 +501,23 @@ const importData = (event: Event) => {
 
 const resetAllData = () => {
   const confirmMessage = 'Are you sure you want to reset ALL data?\n\nThis will permanently delete:\n- All settings\n- All history\n- All presets\n- All timer states\n\nThis action cannot be undone!'
-  
+
   if (confirm(confirmMessage)) {
-    // Clear all localStorage items
     const keysToRemove: string[] = []
-    
-    // Find all timer state keys
+
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
       if (key && (key.startsWith('timer-state-') || key === 'timer-settings' || key === 'timer-history' || key.startsWith('timer-tab-id'))) {
         keysToRemove.push(key)
       }
     }
-    
-    // Remove all found keys
-    keysToRemove.forEach(key => localStorage.removeItem(key))
-    
-    // Clear sessionStorage
+
+    keysToRemove.forEach((key) => localStorage.removeItem(key))
     sessionStorage.clear()
-    
-    // Reset stores
+
     settingsStore.resetToDefaults()
     historyStore.clearHistory()
-    
-    // Reload the page to apply changes
+
     alert('All data has been reset. The page will now reload.')
     window.location.reload()
   }
@@ -538,6 +526,46 @@ const resetAllData = () => {
 const close = () => {
   cancelPresetEdit()
   emit('close')
+}
+
+// Focus management
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen) {
+      previouslyFocusedElement.value = document.activeElement as HTMLElement
+      nextTick(() => {
+        closeButtonRef.value?.focus()
+        // Trap focus inside dialog
+        dialogRef.value?.addEventListener('keydown', trapFocus)
+      })
+    } else {
+      dialogRef.value?.removeEventListener('keydown', trapFocus)
+      nextTick(() => {
+        previouslyFocusedElement.value?.focus()
+      })
+    }
+  }
+)
+
+const trapFocus = (e: KeyboardEvent) => {
+  if (e.key !== 'Tab' || !dialogRef.value) {
+    return
+  }
+
+  const focusableElements = dialogRef.value.querySelectorAll<HTMLElement>(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  )
+  const firstElement = focusableElements[0]
+  const lastElement = focusableElements[focusableElements.length - 1]
+
+  if (e.shiftKey && document.activeElement === firstElement) {
+    e.preventDefault()
+    lastElement.focus()
+  } else if (!e.shiftKey && document.activeElement === lastElement) {
+    e.preventDefault()
+    firstElement.focus()
+  }
 }
 
 watch(
@@ -575,4 +603,3 @@ watch(
   }
 )
 </script>
-

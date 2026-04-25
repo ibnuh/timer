@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-background flex flex-col">
     <!-- Compact Header -->
-    <header ref="headerRef" class="flex items-center justify-between px-4 py-2 border-b border-border/60 h-14 flex-shrink-0">
+    <header class="flex items-center justify-between px-4 py-2 border-b border-border/60 h-14 flex-shrink-0">
       <h1 class="text-xl font-bold text-foreground">Timer</h1>
       <div class="flex gap-2 items-center">
         <button
@@ -129,7 +129,7 @@
         <div class="container mx-auto max-w-4xl px-4 py-2">
           <div class="flex justify-center">
             <div class="w-full max-w-2xl">
-              <TimerView ref="timerRef" />
+              <TimerView />
             </div>
           </div>
         </div>
@@ -152,10 +152,10 @@
         </div>
       </div>
 
-      <!-- Keyboard Shortcuts Display for Mobile (at bottom of content) -->
+      <!-- Keyboard Shortcuts Display for Mobile -->
       <div class="lg:hidden w-full border-t border-border/60 bg-background/50">
         <div class="container mx-auto max-w-4xl px-4 py-3">
-          <div 
+          <div
             class="text-xs font-medium text-center"
             :class="timerFinished ? 'text-primary' : 'text-foreground/70'"
           >
@@ -164,19 +164,19 @@
                 <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">Space</kbd>
                 <span>Start/Pause</span>
               </div>
-              <span class="text-foreground/30">•</span>
+              <span class="text-foreground/30">&bull;</span>
               <div class="flex items-center gap-1">
                 <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">R</kbd>
                 <span>Reset</span>
               </div>
-              <span class="text-foreground/30">•</span>
+              <span class="text-foreground/30">&bull;</span>
               <div class="flex items-center gap-1">
-                <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">↑↓</kbd>
+                <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">&uarr;&darr;</kbd>
                 <span>Seconds</span>
               </div>
-              <span class="text-foreground/30">•</span>
+              <span class="text-foreground/30">&bull;</span>
               <div class="flex items-center gap-1">
-                <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">←→</kbd>
+                <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">&larr;&rarr;</kbd>
                 <span>Minutes</span>
               </div>
             </div>
@@ -185,34 +185,34 @@
       </div>
     </div>
 
-    <!-- Keyboard Shortcuts Display for Desktop (Floating Bottom Left) -->
+    <!-- Keyboard Shortcuts Display for Desktop -->
     <div class="hidden lg:block fixed bottom-4 left-4 z-40 pointer-events-none">
-      <div 
+      <div
         class="bg-background/90 backdrop-blur-sm border border-border/60 rounded-lg px-3 py-2 shadow-lg transition-all duration-200"
         :class="timerFinished ? 'border-primary/50 shadow-primary/20' : ''"
       >
-        <div 
+        <div
           class="text-xs font-medium space-y-1 text-left leading-tight"
           :class="timerFinished ? 'text-primary' : 'text-foreground/70'"
         >
           <div class="flex items-center gap-1.5">
             <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">Space</kbd>
             <span>Start/Pause</span>
-            <span class="text-foreground/40">•</span>
+            <span class="text-foreground/40">&bull;</span>
             <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">R</kbd>
             <span>Reset</span>
           </div>
           <div class="flex items-center gap-1.5 flex-wrap">
-            <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">↑↓</kbd>
+            <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">&uarr;&darr;</kbd>
             <span>Seconds</span>
-            <span class="text-foreground/40">•</span>
-            <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">←→</kbd>
+            <span class="text-foreground/40">&bull;</span>
+            <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">&larr;&rarr;</kbd>
             <span>Minutes</span>
           </div>
           <div class="flex items-center gap-1.5">
             <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">R</kbd>
             <span>Repeat</span>
-            <span class="text-foreground/40">•</span>
+            <span class="text-foreground/40">&bull;</span>
             <kbd class="px-1.5 py-0.5 bg-secondary/50 rounded text-[10px] font-mono">D</kbd>
             <span>Dismiss</span>
           </div>
@@ -226,9 +226,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useSettingsStore } from './stores/settings'
 import { useTimerStore } from './stores/timer'
+import { formatDuration } from './utils/timeFormatter'
 import TimerView from './components/TimerView.vue'
 import HistoryView from './components/HistoryView.vue'
 import SettingsPopup from './components/SettingsPopup.vue'
@@ -239,100 +240,74 @@ const isDark = ref(false)
 const showHistory = ref(true)
 const showSettings = ref(false)
 
-const timerRef = ref<InstanceType<typeof TimerView> | null>(null)
-const headerRef = ref<HTMLElement | null>(null)
-
 const timerFinished = computed(() => timerStore.timerFinishedWhileInactive)
 
-// Update tab title with timer time
-const updateTabTitle = () => {
-  const baseTitle = 'Timer'
-  
-  if (timerRef.value) {
-    const { formattedTime, isRunning, isPaused } = timerRef.value
-    if (isRunning || isPaused) {
-      document.title = `${formattedTime} - ${baseTitle}`
-    } else {
-      document.title = baseTitle
-    }
-  } else {
-    document.title = baseTitle
+// Reactive tab title
+const documentTitle = computed(() => {
+  if (timerStore.isRunning || timerStore.isPaused) {
+    return `${formatDuration(timerStore.remainingSeconds)} - Timer`
   }
-}
+  return 'Timer'
+})
+
+watch(documentTitle, (title) => {
+  document.title = title
+})
+
+let mediaQuery: MediaQueryList | null = null
+let handleSystemThemeChange: ((e: MediaQueryListEvent) => void) | null = null
 
 onMounted(() => {
-  // Load settings first
   settingsStore.loadSettings()
-  
-  // Then sync isDark with the loaded theme
+
   isDark.value = settingsStore.settings.theme === 'dark'
-  
-  // Ensure the class matches the theme
+
   if (isDark.value) {
     document.documentElement.classList.add('dark')
   } else {
     document.documentElement.classList.remove('dark')
   }
-  
-  // Load showHistory from settings (default to false)
+
   showHistory.value = settingsStore.settings.showHistory ?? false
-  
-  // Listen for system theme changes and update if no user preference is set
-  let mediaQuery: MediaQueryList | null = null
-  let handleSystemThemeChange: ((e: MediaQueryListEvent) => void) | null = null
-  
+
   if (window.matchMedia) {
     mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     handleSystemThemeChange = (e: MediaQueryListEvent) => {
-      // Only update if user hasn't explicitly set a preference
       if (!settingsStore.hasThemePreference()) {
-        // No user preference, update to match system (without saving)
         isDark.value = e.matches
         settingsStore.updateThemeFromSystem()
       }
     }
-    
-    // Modern browsers
+
     if (mediaQuery.addEventListener && handleSystemThemeChange) {
       mediaQuery.addEventListener('change', handleSystemThemeChange)
     } else if (handleSystemThemeChange) {
-      // Fallback for older browsers
       mediaQuery.addListener(handleSystemThemeChange)
     }
   }
-  
-  // Update tab title periodically when timer is running
-  const titleInterval = setInterval(() => {
-    updateTabTitle()
-  }, 100)
-  
-  // Handle beforeunload confirmation
-  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-    if (settingsStore.settings.confirmBeforeClose) {
-      e.preventDefault()
-      // Modern browsers require returnValue to be set
-      e.returnValue = ''
-      return ''
+
+  window.addEventListener('beforeunload', handleBeforeUnload)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+
+  if (mediaQuery && handleSystemThemeChange) {
+    if (mediaQuery.removeEventListener) {
+      mediaQuery.removeEventListener('change', handleSystemThemeChange)
+    } else {
+      mediaQuery.removeListener(handleSystemThemeChange)
     }
   }
-  
-  window.addEventListener('beforeunload', handleBeforeUnload)
-  
-  // Cleanup on unmount
-  onUnmounted(() => {
-    clearInterval(titleInterval)
-    window.removeEventListener('beforeunload', handleBeforeUnload)
-    // Clean up media query listener
-    if (mediaQuery && handleSystemThemeChange) {
-      if (mediaQuery.removeEventListener) {
-        mediaQuery.removeEventListener('change', handleSystemThemeChange)
-      } else {
-        // Fallback for older browsers
-        mediaQuery.removeListener(handleSystemThemeChange)
-      }
-    }
-  })
 })
+
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (settingsStore.settings.confirmBeforeClose) {
+    e.preventDefault()
+    e.returnValue = ''
+    return ''
+  }
+}
 
 const toggleTheme = () => {
   isDark.value = !isDark.value
@@ -357,4 +332,3 @@ const toggleFullscreen = () => {
   }
 }
 </script>
-

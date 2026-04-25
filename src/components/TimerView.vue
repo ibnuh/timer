@@ -28,7 +28,7 @@
               fill="none"
               class="text-secondary/40"
             />
-            
+
             <!-- Progress circle -->
             <circle
               cx="128"
@@ -42,11 +42,11 @@
                 rotationDirection === 'clockwise' ? 'text-primary' : rotationDirection === 'counter-clockwise' ? 'text-accent' : '',
                 timerFinishedWhileInactive ? 'text-primary' : '',
               ]"
-              :stroke-dasharray="circumference"
+              :stroke-dasharray="CIRCUMFERENCE"
               :stroke-dashoffset="strokeDashoffset"
               stroke-linecap="round"
             />
-            
+
             <!-- Rotation indicator dots -->
             <g v-if="isDragging">
               <circle
@@ -61,7 +61,7 @@
               />
             </g>
           </svg>
-          
+
           <!-- Center content -->
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
             <div class="text-center">
@@ -78,7 +78,7 @@
                   isDragging && rotationDirection === 'counter-clockwise' ? 'text-accent' : '',
                 ]"
               >
-                {{ formattedTime }}
+                {{ displayTime }}
               </div>
               <div v-if="isRunning" class="text-xs text-muted-foreground">
                 {{ isPaused ? 'Paused' : 'Running' }}
@@ -88,7 +88,7 @@
                 class="text-xs font-medium mt-1 transition-colors"
                 :class="rotationDirection === 'clockwise' ? 'text-primary' : 'text-accent'"
               >
-                {{ rotationDirection === 'clockwise' ? '↻ Adding' : '↺ Subtracting' }}
+                {{ rotationDirection === 'clockwise' ? 'Adding' : 'Subtracting' }}
                 <span v-if="rotationSpeed > 1" class="ml-1 opacity-70">
                   ({{ rotationSpeed.toFixed(1) }}x)
                 </span>
@@ -122,11 +122,14 @@
                 </svg>
                 <span class="text-sm font-semibold text-primary">Timer Finished!</span>
               </div>
+              <div v-if="finishedAtTime" class="text-xs text-muted-foreground">
+                Finished at {{ finishedAtTime }}
+              </div>
               <div v-if="label" class="text-sm font-medium text-foreground/80 px-3 py-1 rounded-md bg-secondary/50 max-w-[200px] truncate">
                 {{ label }}
               </div>
               <div class="text-3xl font-bold text-primary">
-                {{ formattedInitialTime }}
+                {{ formatDuration(initialSeconds) }}
               </div>
               <div class="flex gap-2 mt-1 flex-col">
                 <button
@@ -144,49 +147,47 @@
               </div>
             </div>
           </div>
-          
         </div>
 
         <!-- Quick Add/Subtract Buttons -->
         <div class="flex gap-2 mb-4 flex-wrap justify-center">
           <button
             @click="addTime(-30)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
+            class="px-3 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
             :disabled="totalSeconds < 30"
           >
             -30s
           </button>
           <button
-            @click="addTime(-20)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
-            :disabled="totalSeconds < 20"
-          >
-            -20s
-          </button>
-          <button
             @click="addTime(-10)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
+            class="px-3 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
             :disabled="totalSeconds < 10"
           >
             -10s
           </button>
           <button
             @click="addTime(10)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground border border-border/50"
+            class="px-3 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground border border-border/50"
           >
             +10s
           </button>
           <button
-            @click="addTime(20)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground border border-border/50"
-          >
-            +20s
-          </button>
-          <button
             @click="addTime(30)"
-            class="px-4 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground border border-border/50"
+            class="px-3 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground border border-border/50"
           >
             +30s
+          </button>
+          <button
+            @click="addTime(60)"
+            class="px-3 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground border border-border/50"
+          >
+            +1m
+          </button>
+          <button
+            @click="addTime(300)"
+            class="px-3 py-2 rounded-md bg-secondary hover:bg-secondary/90 transition-colors text-sm font-medium text-secondary-foreground border border-border/50"
+          >
+            +5m
           </button>
         </div>
       </div>
@@ -232,7 +233,19 @@
 
       <!-- Timer Presets -->
       <div class="mb-3">
-        <div class="text-sm font-semibold mb-2 text-foreground">Quick Presets</div>
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-sm font-semibold text-foreground">Quick Presets</div>
+          <button
+            @click="copyShareLink"
+            class="text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+            :disabled="totalSeconds === 0"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+            Copy link
+          </button>
+        </div>
         <div class="grid grid-cols-4 gap-2">
           <button
             v-for="preset in presets"
@@ -446,6 +459,11 @@
         </div>
       </div>
     </div>
+
+    <!-- Accessibility: live region for screen readers -->
+    <div aria-live="polite" aria-atomic="true" class="sr-only">
+      {{ ariaLiveMessage }}
+    </div>
   </div>
 </template>
 
@@ -454,69 +472,26 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { useHistoryStore } from '../stores/history'
 import { useTimerStore } from '../stores/timer'
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { playNotification, stopRepeatingBells } from '../utils/sound'
+import { formatDuration, formatTimeOnly } from '../utils/timeFormatter'
+import { CIRCUMFERENCE, REPEAT_BUTTON_DELAY_MS, REPEAT_BUTTON_INTERVAL_MS } from '../utils/constants'
 
 const settingsStore = useSettingsStore()
 const historyStore = useHistoryStore()
 const timerStore = useTimerStore()
 
-// Helper function to show browser notification
-const showBrowserNotification = () => {
-  // Check if notifications are enabled in settings
-  if (!settingsStore.settings.notificationsEnabled) {
-    console.log('Notifications disabled in settings')
-    return
-  }
-  
-  // Check if browser supports notifications
-  if (!('Notification' in window)) {
-    console.log('Browser does not support notifications')
-    return
-  }
-  
-  // Check permission
-  if (Notification.permission === 'denied') {
-    console.log('Notification permission denied')
-    return
-  }
-  
-  if (Notification.permission === 'default') {
-    console.log('Notification permission not yet requested, requesting now...')
-    Notification.requestPermission().then((permission) => {
-      if (permission === 'granted') {
-        showNotification()
-      } else {
-        console.log('Notification permission denied by user')
-      }
-    })
-    return
-  }
-  
-  if (Notification.permission === 'granted') {
-    showNotification()
-  }
-}
+const circleContainer = ref<HTMLElement | null>(null)
+const isDragging = ref(false)
+const lastAngle = ref(0)
+const lastTime = ref(0)
+const rotationSpeed = ref(1)
+const consecutiveRotations = ref(0)
+const rotationDirection = ref<'clockwise' | 'counter-clockwise' | null>(null)
+const currentRotationAngle = ref(0)
+const finishedAtTime = ref<string>('')
+const ariaLiveMessage = ref<string>('')
 
-const showNotification = () => {
-  try {
-    const notification = new Notification('Timer Finished!', {
-      body: `Your timer has completed.`,
-      icon: '/vite.svg',
-      tag: 'timer-finished', // Use tag to replace previous notifications
-    })
-    
-    // Auto-close notification after 5 seconds
-    setTimeout(() => {
-      notification.close()
-    }, 5000)
-    
-    console.log('Notification shown successfully')
-  } catch (error) {
-    console.error('Error showing notification:', error)
-  }
-}
-
-// Use store state
 const hours = computed({
   get: () => timerStore.hours,
   set: (val: number) => timerStore.setTime(val, timerStore.minutes, timerStore.seconds)
@@ -541,9 +516,6 @@ const soundEnabled = ref(settingsStore.settings.soundEnabled)
 const silentOnTabOpen = ref(settingsStore.settings.silentOnTabOpen)
 const repeatBells = ref(settingsStore.settings.repeatBells)
 
-let intervalId: number | null = null
-
-// Timer presets - default + custom
 const presets = computed(() => {
   const defaultPresets = settingsStore.settings.defaultPresets || []
   const custom = settingsStore.settings.customPresets || []
@@ -557,40 +529,24 @@ const totalSeconds = computed(() => {
   return hours.value * 3600 + minutes.value * 60 + seconds.value
 })
 
-const formattedTime = computed(() => {
-  const h = Math.floor(totalSeconds.value / 3600)
-  const m = Math.floor((totalSeconds.value % 3600) / 60)
-  const s = totalSeconds.value % 60
-  if (h > 0) {
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  }
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-})
+const displayTime = computed(() => formatDuration(totalSeconds.value))
 
-const formattedInitialTime = computed(() => {
-  const h = Math.floor(initialSeconds.value / 3600)
-  const m = Math.floor((initialSeconds.value % 3600) / 60)
-  const s = initialSeconds.value % 60
-  if (h > 0) {
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+const strokeDashoffset = computed(() => {
+  if (timerFinishedWhileInactive.value) {
+    return 0
   }
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  if (initialSeconds.value === 0) {
+    return CIRCUMFERENCE
+  }
+  const progress = remainingSeconds.value / initialSeconds.value
+  return CIRCUMFERENCE * (1 - progress)
 })
-
-const circumference = 2 * Math.PI * 116
 
 // Circular drag interaction
-const circleContainer = ref<HTMLElement | null>(null)
-const isDragging = ref(false)
-const lastAngle = ref(0)
-const lastTime = ref(0)
-const rotationSpeed = ref(1)
-const consecutiveRotations = ref(0)
-const rotationDirection = ref<'clockwise' | 'counter-clockwise' | null>(null)
-const currentRotationAngle = ref(0)
-
 const getAngleFromCenter = (x: number, y: number): number => {
-  if (!circleContainer.value) return 0
+  if (!circleContainer.value) {
+    return 0
+  }
   const rect = circleContainer.value.getBoundingClientRect()
   const centerX = rect.left + rect.width / 2
   const centerY = rect.top + rect.height / 2
@@ -598,7 +554,9 @@ const getAngleFromCenter = (x: number, y: number): number => {
 }
 
 const startDrag = (e: MouseEvent | TouchEvent) => {
-  if (isRunning.value) return
+  if (isRunning.value) {
+    return
+  }
   isDragging.value = true
   rotationDirection.value = null
   currentRotationAngle.value = 0
@@ -611,30 +569,31 @@ const startDrag = (e: MouseEvent | TouchEvent) => {
 }
 
 const handleDrag = (e: MouseEvent | TouchEvent) => {
-  if (!isDragging.value || isRunning.value) return
+  if (!isDragging.value || isRunning.value) {
+    return
+  }
   e.preventDefault()
-  
+
   const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
   const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
   const currentAngle = getAngleFromCenter(clientX, clientY)
-  
-  // Calculate angle difference
+
   let angleDiff = currentAngle - lastAngle.value
-  
-  // Normalize to -π to π
-  if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI
-  if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI
-  
-  // Determine rotation direction (positive = clockwise, negative = counter-clockwise)
+
+  if (angleDiff > Math.PI) {
+    angleDiff -= 2 * Math.PI
+  }
+  if (angleDiff < -Math.PI) {
+    angleDiff += 2 * Math.PI
+  }
+
   if (Math.abs(angleDiff) > 0.05) {
     const now = Date.now()
     const timeDiff = now - lastTime.value
-    
-    // Update rotation direction
+
     rotationDirection.value = angleDiff > 0 ? 'clockwise' : 'counter-clockwise'
     currentRotationAngle.value += angleDiff
-    
-    // Speed up if rotating quickly
+
     if (timeDiff < 50) {
       consecutiveRotations.value++
       rotationSpeed.value = Math.min(5, 1 + consecutiveRotations.value * 0.2)
@@ -642,11 +601,16 @@ const handleDrag = (e: MouseEvent | TouchEvent) => {
       consecutiveRotations.value = Math.max(0, consecutiveRotations.value - 1)
       rotationSpeed.value = Math.max(1, rotationSpeed.value - 0.1)
     }
-    
-    // Adjust time: clockwise = add, counter-clockwise = subtract
-    const timeAdjustment = Math.round((angleDiff > 0 ? 1 : -1) * 5 * rotationSpeed.value)
+
+    const baseStep = rotationSpeed.value > 2 ? 5 : 1
+    const timeAdjustment = Math.round((angleDiff > 0 ? 1 : -1) * baseStep * rotationSpeed.value)
     addTime(timeAdjustment)
-    
+
+    // Haptic feedback on mobile
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10)
+    }
+
     lastAngle.value = currentAngle
     lastTime.value = now
   }
@@ -660,14 +624,15 @@ const endDrag = () => {
   rotationSpeed.value = 1
 }
 
-// Rotation indicator dots
 const rotationDots = computed(() => {
-  if (!isDragging.value || !rotationDirection.value) return []
+  if (!isDragging.value || !rotationDirection.value) {
+    return []
+  }
   const dots = []
   const numDots = Math.min(8, Math.max(4, Math.floor(rotationSpeed.value * 1.5)))
-  const baseAngle = currentRotationAngle.value - Math.PI / 2 // Adjust for SVG rotation
+  const baseAngle = currentRotationAngle.value - Math.PI / 2
   const spacing = (2 * Math.PI) / numDots
-  
+
   for (let i = 0; i < numDots; i++) {
     const angle = baseAngle + i * spacing
     const opacity = 0.4 + (i % 2) * 0.3
@@ -679,72 +644,63 @@ const rotationDots = computed(() => {
   }
   return dots
 })
-const strokeDashoffset = computed(() => {
-  if (timerFinishedWhileInactive.value) return 0 // Show complete circle when finished
-  if (initialSeconds.value === 0) return circumference
-  const progress = remainingSeconds.value / initialSeconds.value
-  return circumference * (1 - progress)
-})
 
 const updateTime = () => {
   let h = hours.value
   let m = minutes.value
   let s = seconds.value
-  
-  if (h < 0) h = 0
-  if (m < 0) m = 0
-  if (s < 0) s = 0
-  if (m > 59) m = 59
-  if (s > 59) s = 59
-  if (h > 23) h = 23
-  
+
+  if (h < 0) {
+    h = 0
+  }
+  if (m < 0) {
+    m = 0
+  }
+  if (s < 0) {
+    s = 0
+  }
+  if (m > 59) {
+    m = 59
+  }
+  if (s > 59) {
+    s = 59
+  }
+  if (h > 23) {
+    h = 23
+  }
+
   timerStore.setTime(h, m, s)
-}
-
-const adjustHours = (delta: number) => {
-  if (isRunning.value) return
-  const newHours = Math.max(0, Math.min(23, hours.value + delta))
-  timerStore.setTime(newHours, minutes.value, seconds.value)
-}
-
-const adjustMinutes = (delta: number) => {
-  if (isRunning.value) return
-  const newMinutes = Math.max(0, Math.min(59, minutes.value + delta))
-  timerStore.setTime(hours.value, newMinutes, seconds.value)
-}
-
-const adjustSeconds = (delta: number) => {
-  if (isRunning.value) return
-  const newSeconds = Math.max(0, Math.min(59, seconds.value + delta))
-  timerStore.setTime(hours.value, minutes.value, newSeconds)
 }
 
 // Repeat functionality for hold-to-increase/decrease
 let repeatTimeoutId: number | null = null
 let repeatIntervalId: number | null = null
 let repeatType: 'hours' | 'minutes' | 'seconds' | null = null
-let repeatDelta: number = 0
+let repeatDelta = 0
 
 const startRepeat = (type: 'hours' | 'minutes' | 'seconds', delta: number) => {
-  if (isRunning.value) return
-  
-  // Immediately adjust once
-  if (type === 'hours') adjustHours(delta)
-  else if (type === 'minutes') adjustMinutes(delta)
-  else if (type === 'seconds') adjustSeconds(delta)
-  
+  if (isRunning.value) {
+    return
+  }
+
+  if (type === 'hours') {
+    adjustHours(delta)
+  } else if (type === 'minutes') {
+    adjustMinutes(delta)
+  } else if (type === 'seconds') {
+    adjustSeconds(delta)
+  }
+
   repeatType = type
   repeatDelta = delta
-  
-  // Start repeating after initial delay (500ms like default browser behavior)
+
   repeatTimeoutId = window.setTimeout(() => {
-    // Then repeat every 100ms
     repeatIntervalId = window.setInterval(() => {
       if (isRunning.value) {
         stopRepeat()
         return
       }
-      
+
       if (repeatType === 'hours') {
         if ((repeatDelta > 0 && hours.value >= 23) || (repeatDelta < 0 && hours.value <= 0)) {
           stopRepeat()
@@ -764,8 +720,8 @@ const startRepeat = (type: 'hours' | 'minutes' | 'seconds', delta: number) => {
         }
         adjustSeconds(repeatDelta)
       }
-    }, 100)
-  }, 500)
+    }, REPEAT_BUTTON_INTERVAL_MS)
+  }, REPEAT_BUTTON_DELAY_MS)
 }
 
 const stopRepeat = () => {
@@ -781,6 +737,30 @@ const stopRepeat = () => {
   repeatDelta = 0
 }
 
+const adjustHours = (delta: number) => {
+  if (isRunning.value) {
+    return
+  }
+  const newHours = Math.max(0, Math.min(23, hours.value + delta))
+  timerStore.setTime(newHours, minutes.value, seconds.value)
+}
+
+const adjustMinutes = (delta: number) => {
+  if (isRunning.value) {
+    return
+  }
+  const newMinutes = Math.max(0, Math.min(59, minutes.value + delta))
+  timerStore.setTime(hours.value, newMinutes, seconds.value)
+}
+
+const adjustSeconds = (delta: number) => {
+  if (isRunning.value) {
+    return
+  }
+  const newSeconds = Math.max(0, Math.min(59, seconds.value + delta))
+  timerStore.setTime(hours.value, minutes.value, newSeconds)
+}
+
 const addTime = (additionalSeconds: number) => {
   timerStore.addTime(additionalSeconds)
   if (isRunning.value && !isPaused.value) {
@@ -789,7 +769,9 @@ const addTime = (additionalSeconds: number) => {
 }
 
 const setPreset = (presetSeconds: number) => {
-  if (isRunning.value) return
+  if (isRunning.value) {
+    return
+  }
   const h = Math.floor(presetSeconds / 3600)
   const remaining = presetSeconds % 3600
   const m = Math.floor(remaining / 60)
@@ -797,145 +779,74 @@ const setPreset = (presetSeconds: number) => {
   timerStore.setTime(h, m, s)
 }
 
-// Keyboard shortcuts
-const handleKeyDown = (e: KeyboardEvent) => {
-  // Don't handle shortcuts when typing in inputs
-  if (e.target instanceof HTMLInputElement) {
+// Browser notification helpers
+const showBrowserNotification = () => {
+  if (!settingsStore.settings.notificationsEnabled) {
     return
   }
-
-  // Space: Start/Pause
-  if (e.key === ' ' || e.key === 'Spacebar') {
-    e.preventDefault()
-    if (!isRunning.value && totalSeconds.value > 0) {
-      start()
-    } else if (isRunning.value && !isPaused.value) {
-      pause()
-    } else if (isPaused.value) {
-      resume()
-    }
+  if (!('Notification' in window)) {
     return
   }
-
-  // R: Reset (or Repeat when timer finished)
-  if (e.key === 'r' || e.key === 'R') {
-    e.preventDefault()
-    if (timerFinishedWhileInactive.value) {
-      repeatTimer()
-    } else {
-      reset()
-    }
+  if (Notification.permission === 'denied') {
     return
   }
-
-  // D: Dismiss (when timer finished)
-  if (timerFinishedWhileInactive.value && (e.key === 'd' || e.key === 'D' || e.code === 'KeyD')) {
-    e.preventDefault()
-    e.stopPropagation()
-    dismissFinished()
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then((permission) => {
+      if (permission === 'granted') {
+        createNotification()
+      }
+    })
     return
   }
-
-  // Arrow keys: Adjust time
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-    e.preventDefault()
-    handleTimeAdjustment(e.key)
+  if (Notification.permission === 'granted') {
+    createNotification()
   }
 }
 
-const handleTimeAdjustment = (key: string) => {
-  if (isRunning.value) return
-
-  switch (key) {
-    case 'ArrowUp':
-      // Increase seconds
-      addTime(1)
-      break
-    case 'ArrowDown':
-      // Decrease seconds
-      addTime(-1)
-      break
-    case 'ArrowRight':
-      // Increase minutes
-      addTime(60)
-      break
-    case 'ArrowLeft':
-      // Decrease minutes
-      addTime(-60)
-      break
+const createNotification = () => {
+  try {
+    const notification = new Notification('Timer Finished!', {
+      body: 'Your timer has completed.',
+      icon: '/vite.svg',
+      tag: 'timer-finished',
+    })
+    setTimeout(() => {
+      notification.close()
+    }, 5000)
+  } catch (error) {
+    console.error('Error showing notification:', error)
   }
 }
 
+// Timer controls
 const start = () => {
   const total = hours.value * 3600 + minutes.value * 60 + seconds.value
-  if (total === 0) return
+  if (total === 0) {
+    return
+  }
 
-  stopRepeat() // Stop any ongoing repeat when starting timer
-  stopRepeatingBells() // Stop any repeating bells from previous timer
+  stopRepeat()
+  stopRepeatingBells()
   timerStore.start()
-  
+
   historyStore.addEntry({
     type: 'timer',
     status: 'started',
     duration: initialSeconds.value,
     label: label.value || undefined,
   })
-
-  // Start interval to tick the timer
-  if (intervalId) clearInterval(intervalId)
-  intervalId = window.setInterval(() => {
-      const finished = timerStore.tick()
-      if (finished) {
-        playNotification()
-        historyStore.addEntry({
-          type: 'timer',
-          status: 'completed',
-          duration: initialSeconds.value,
-          label: label.value || undefined,
-        })
-        
-        // Show browser notification
-        showBrowserNotification()
-      }
-  }, 1000)
 }
 
 const pause = () => {
   timerStore.pause()
-  if (intervalId) {
-    clearInterval(intervalId)
-    intervalId = null
-  }
 }
 
 const resume = () => {
   timerStore.resume()
-  
-  // Resume interval
-  if (intervalId) clearInterval(intervalId)
-  intervalId = window.setInterval(() => {
-    const finished = timerStore.tick()
-    if (finished) {
-      // Timer finished - tick() already set the flag
-      playNotification()
-      historyStore.addEntry({
-        type: 'timer',
-        status: 'completed',
-        duration: initialSeconds.value,
-        label: label.value || undefined,
-      })
-      
-      showBrowserNotification()
-    }
-  }, 1000)
 }
 
 const stop = () => {
   timerStore.stop()
-  if (intervalId) {
-    clearInterval(intervalId)
-    intervalId = null
-  }
 }
 
 const reset = () => {
@@ -947,24 +858,20 @@ const reset = () => {
 const dismissFinished = () => {
   stopRepeatingBells()
   timerStore.clearFinishedIndicator()
+  finishedAtTime.value = ''
 }
 
 const repeatTimer = () => {
-  // Stop repeating bells
   stopRepeatingBells()
-  
-  // Clear the finished indicator
   timerStore.clearFinishedIndicator()
-  
-  // Restore the time to the initial duration
+  finishedAtTime.value = ''
+
   const h = Math.floor(initialSeconds.value / 3600)
   const remaining = initialSeconds.value % 3600
   const m = Math.floor(remaining / 60)
   const s = remaining % 60
-  
+
   timerStore.setTime(h, m, s)
-  
-  // Start the timer
   start()
 }
 
@@ -989,169 +896,159 @@ const clearLabel = () => {
   timerStore.setLabel('')
 }
 
-onMounted(() => {
-  // Sync label from store
-  timerLabel.value = timerStore.label || ''
-  
-  // Request notification permission
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission()
+const copyShareLink = async () => {
+  const total = isRunning.value ? initialSeconds.value : totalSeconds.value
+  const params = new URLSearchParams()
+  params.set('t', String(total))
+  if (label.value) {
+    params.set('label', label.value)
   }
-  
-  // Add keyboard event listener
-  window.addEventListener('keydown', handleKeyDown)
-  
-  // Check if timer finished while inactive (on initial load)
-  if (timerStore.timerFinishedWhileInactive) {
-    // Timer already finished, indicator will be shown
-    // Play notification if enabled
-    if (settingsStore.settings.soundEnabled && !settingsStore.settings.silentOnTabOpen) {
-      playNotification()
-    }
+  const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`
+  try {
+    await navigator.clipboard.writeText(url)
+    ariaLiveMessage.value = 'Timer link copied to clipboard'
+    setTimeout(() => {
+      ariaLiveMessage.value = ''
+    }, 2000)
+  } catch {
+    // Fallback
+    const textarea = document.createElement('textarea')
+    textarea.value = url
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    ariaLiveMessage.value = 'Timer link copied to clipboard'
+    setTimeout(() => {
+      ariaLiveMessage.value = ''
+    }, 2000)
   }
-  
-  // Restore timer if it was running
-  if (timerStore.isRunning && !timerStore.isPaused) {
-    // Timer was running, resume the interval
-    intervalId = window.setInterval(() => {
-      const finished = timerStore.tick()
-      if (finished) {
-        playNotification()
-        historyStore.addEntry({
-          type: 'timer',
-          status: 'completed',
-          duration: initialSeconds.value,
-          label: label.value || undefined,
-        })
-        
-        showBrowserNotification()
-      }
-    }, 1000)
-  } else if (timerStore.isPaused) {
-    // Timer was paused, update display
-    timerStore.updateTimeFromRemaining()
-  }
-  
-  // Handle page visibility changes
-  // Timer continues running in background, but we need to sync when page becomes visible
-  const handleVisibilityChange = () => {
-    if (!document.hidden) {
-      // Page is visible again - sync timer state
-      if (timerStore.isRunning && !timerStore.isPaused) {
-        // Ensure interval is running
-        if (!intervalId) {
-          intervalId = window.setInterval(() => {
-            const finished = timerStore.tick()
-            if (finished) {
-              playNotification()
-              historyStore.addEntry({
-                type: 'timer',
-                status: 'completed',
-                duration: initialSeconds.value,
-                label: label.value || undefined,
-              })
-              
-              showBrowserNotification()
-            }
-          }, 1000)
-        }
-        // Sync the timer state (recalculate remaining time)
-        const finished = timerStore.tick()
-        if (finished) {
-          // Timer finished - tick() already set the flag if tab was inactive
-          playNotification()
-          historyStore.addEntry({
-            type: 'timer',
-            status: 'completed',
-            duration: initialSeconds.value,
-            label: label.value || undefined,
-          })
-          
-          showBrowserNotification()
-        }
-        timerStore.updateTimeFromRemaining()
-      } else if (initialSeconds.value > 0) {
-        // Timer might have finished while tab was inactive
-        // Check the saved state to see if timer expired
-        const saved = localStorage.getItem(`timer-state-${timerStore.tabId}`)
-        if (saved) {
-          try {
-            const state = JSON.parse(saved)
-            if (state.isRunning && state.startTime && state.initialSeconds) {
-              // Timer was running when saved, check if it expired
-              const now = Date.now()
-              const elapsed = Math.floor((now - state.startTime) / 1000)
-              if (elapsed >= state.initialSeconds) {
-                // Timer finished while tab was inactive
-                timerStore.timerFinishedWhileInactive = true
-                timerStore.saveState()
-                if (settingsStore.settings.soundEnabled && !settingsStore.settings.silentOnTabOpen) {
-                  playNotification()
-                }
-                historyStore.addEntry({
-                  type: 'timer',
-                  status: 'completed',
-                  duration: initialSeconds.value,
-                  label: label.value || undefined,
-                })
-                
-                showBrowserNotification()
-              }
-            }
-          } catch (e) {
-            // Ignore parse errors
-          }
-        }
-      }
-    }
-    // When page is hidden, timer continues running in background
-    // The tick() function uses timestamps, so it will catch up when page becomes visible
-  }
-  
-  document.addEventListener('visibilitychange', handleVisibilityChange)
-  
-  // Store cleanup function
-  const cleanup = () => {
-    if (intervalId) {
-      clearInterval(intervalId)
-    }
-    stopRepeat()
-    stopRepeatingBells()
-    window.removeEventListener('keydown', handleKeyDown)
-    document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }
-  
-  // Register cleanup
-  onUnmounted(cleanup)
-})
+}
 
+// Keyboard shortcuts
+useKeyboardShortcuts(
+  {
+    start,
+    pause,
+    resume,
+    reset,
+    repeat: repeatTimer,
+    dismiss: dismissFinished,
+    addTime,
+  },
+  () => ({
+    isRunning: isRunning.value,
+    isPaused: isPaused.value,
+    totalSeconds: totalSeconds.value,
+    timerFinishedWhileInactive: timerFinishedWhileInactive.value,
+  })
+)
+
+// Watch for timer finish
+watch(
+  () => timerStore.timerFinishedWhileInactive,
+  (finished) => {
+    if (finished) {
+      playNotification()
+      finishedAtTime.value = formatTimeOnly(new Date())
+      historyStore.addEntry({
+        type: 'timer',
+        status: 'completed',
+        duration: initialSeconds.value,
+        label: label.value || undefined,
+        finishedAt: Date.now(),
+      })
+      showBrowserNotification()
+      ariaLiveMessage.value = `Timer finished. ${label.value || 'Timer'} completed.`
+    }
+  }
+)
+
+// Watch for label changes from store
+watch(
+  () => timerStore.label,
+  (newLabel) => {
+    timerLabel.value = newLabel || ''
+  }
+)
+
+// Watch settings
 watch(
   () => settingsStore.settings.soundEnabled,
-  (val: boolean) => {
+  (val) => {
     soundEnabled.value = val
   }
 )
 
 watch(
   () => settingsStore.settings.silentOnTabOpen,
-  (val: boolean) => {
+  (val) => {
     silentOnTabOpen.value = val
   }
 )
 
 watch(
-  () => timerStore.label,
-  (newLabel: string) => {
-    timerLabel.value = newLabel || ''
+  () => settingsStore.settings.repeatBells,
+  (val) => {
+    repeatBells.value = val
   }
 )
 
-// Expose methods for parent component
+const handleVisibilityChange = () => {
+  if (!document.hidden && timerStore.isRunning && !timerStore.isPaused) {
+    timerStore.tick()
+    timerStore.updateTimeFromRemaining()
+  }
+}
+
+onMounted(() => {
+  timerLabel.value = timerStore.label || ''
+
+  // Request notification permission
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission()
+  }
+
+  // Parse URL params
+  const params = new URLSearchParams(window.location.search)
+  const t = params.get('t')
+  const labelParam = params.get('label')
+  if (t) {
+    const parsed = parseInt(t, 10)
+    if (!isNaN(parsed) && parsed > 0) {
+      const h = Math.floor(parsed / 3600)
+      const remaining = parsed % 3600
+      const m = Math.floor(remaining / 60)
+      const s = remaining % 60
+      timerStore.setTime(h, m, s)
+    }
+  }
+  if (labelParam) {
+    timerStore.setLabel(labelParam)
+    timerLabel.value = labelParam
+  }
+
+  // Check if timer finished while tab was inactive on mount
+  if (timerStore.timerFinishedWhileInactive) {
+    if (settingsStore.settings.soundEnabled && !settingsStore.settings.silentOnTabOpen) {
+      playNotification()
+    }
+  }
+
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  stopRepeat()
+  stopRepeatingBells()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
+// Expose for parent
 defineExpose({
-  formattedTime,
+  formattedTime: displayTime,
   isRunning,
   isPaused,
   totalSeconds,
 })
 </script>
-
