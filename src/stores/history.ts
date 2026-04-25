@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { getStorageItem, setStorageItem } from '../utils/safeStorage'
+import { MAX_HISTORY_ENTRIES } from '../utils/constants'
 
 export type HistoryEntryStatus = 'started' | 'completed'
 
@@ -9,29 +11,21 @@ export interface HistoryEntry {
   status: HistoryEntryStatus
   duration: number
   timestamp: number
+  finishedAt?: number
   label?: string
 }
+
+const STORAGE_KEY = 'timer-history'
 
 export const useHistoryStore = defineStore('history', () => {
   const entries = ref<HistoryEntry[]>([])
 
   const loadHistory = () => {
-    const saved = localStorage.getItem('timer-history')
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        entries.value = parsed.map((entry: HistoryEntry) => ({
-          ...entry,
-          status: entry.status || 'completed',
-        }))
-      } catch (e) {
-        console.error('Failed to load history', e)
-      }
-    }
+    entries.value = getStorageItem<HistoryEntry[]>(STORAGE_KEY, [])
   }
 
   const saveHistory = () => {
-    localStorage.setItem('timer-history', JSON.stringify(entries.value))
+    setStorageItem(STORAGE_KEY, entries.value)
   }
 
   const addEntry = (entry: Omit<HistoryEntry, 'id' | 'timestamp'>) => {
@@ -40,10 +34,18 @@ export const useHistoryStore = defineStore('history', () => {
       id: Date.now().toString(),
       timestamp: Date.now(),
     })
-    if (entries.value.length > 100) {
-      entries.value = entries.value.slice(0, 100)
+    if (entries.value.length > MAX_HISTORY_ENTRIES) {
+      entries.value = entries.value.slice(0, MAX_HISTORY_ENTRIES)
     }
     saveHistory()
+  }
+
+  const updateEntryLabel = (id: string, newLabel: string) => {
+    const entry = entries.value.find((e) => e.id === id)
+    if (entry) {
+      entry.label = newLabel.trim()
+      saveHistory()
+    }
   }
 
   const clearHistory = () => {
@@ -56,8 +58,8 @@ export const useHistoryStore = defineStore('history', () => {
   return {
     entries,
     addEntry,
+    updateEntryLabel,
     clearHistory,
     saveHistory,
   }
 })
-

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { getStorageItem, setStorageItem } from '../utils/safeStorage'
 
 export interface TimerPreset {
   label: string
@@ -30,13 +31,14 @@ const DEFAULT_PRESETS: TimerPreset[] = [
   { label: '1hr', seconds: 3600, id: 'default-1hr' },
 ]
 
-// Detect system theme preference
 const getSystemTheme = (): 'light' | 'dark' => {
   if (typeof window !== 'undefined' && window.matchMedia) {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   }
   return 'light'
 }
+
+const STORAGE_KEY = 'timer-settings'
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<Settings>({
@@ -51,30 +53,21 @@ export const useSettingsStore = defineStore('settings', () => {
     defaultPresets: [...DEFAULT_PRESETS],
   })
 
-  // Track if we're currently loading settings (to prevent auto-save during load)
   let isLoadingSettings = false
-  // Track if we're updating theme from system (to prevent auto-save)
   let isUpdatingFromSystem = false
 
   const loadSettings = () => {
     isLoadingSettings = true
-    const saved = localStorage.getItem('timer-settings')
-    if (saved) {
-      try {
-        const loaded = JSON.parse(saved)
-        // Migrate old settings: if defaultPresets doesn't exist, initialize with defaults
-        if (!loaded.defaultPresets) {
-          loaded.defaultPresets = [...DEFAULT_PRESETS]
-        }
-        settings.value = { ...settings.value, ...loaded }
-        if (settings.value.theme === 'dark') {
-          document.documentElement.classList.add('dark')
-        }
-      } catch (e) {
-        console.error('Failed to load settings', e)
+    const loaded = getStorageItem<Partial<Settings> | null>(STORAGE_KEY, null)
+    if (loaded) {
+      if (!loaded.defaultPresets) {
+        loaded.defaultPresets = [...DEFAULT_PRESETS]
+      }
+      settings.value = { ...settings.value, ...loaded }
+      if (settings.value.theme === 'dark') {
+        document.documentElement.classList.add('dark')
       }
     } else {
-      // No saved settings - use system preference for theme
       const systemTheme = getSystemTheme()
       settings.value.theme = systemTheme
       if (systemTheme === 'dark') {
@@ -82,19 +75,16 @@ export const useSettingsStore = defineStore('settings', () => {
       } else {
         document.documentElement.classList.remove('dark')
       }
-      // Don't save system preference - let it be detected each time if user hasn't set it
     }
     isLoadingSettings = false
   }
 
   const saveSettings = () => {
-    // Only save if not currently loading or updating from system (to avoid saving system preference)
     if (!isLoadingSettings && !isUpdatingFromSystem) {
-      localStorage.setItem('timer-settings', JSON.stringify(settings.value))
+      setStorageItem(STORAGE_KEY, settings.value)
     }
   }
-  
-  // Update theme from system preference (without saving)
+
   const updateThemeFromSystem = () => {
     if (!hasThemePreference()) {
       isUpdatingFromSystem = true
@@ -105,7 +95,6 @@ export const useSettingsStore = defineStore('settings', () => {
       } else {
         document.documentElement.classList.remove('dark')
       }
-      // Use nextTick to ensure watcher has processed, then reset flag
       setTimeout(() => {
         isUpdatingFromSystem = false
       }, 0)
@@ -114,14 +103,14 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const setTheme = (theme: 'light' | 'dark') => {
     settings.value.theme = theme
-    // Explicitly save when user sets theme
-    localStorage.setItem('timer-settings', JSON.stringify(settings.value))
+    setStorageItem(STORAGE_KEY, settings.value)
   }
-  
-  // Check if user has explicitly set a theme preference
+
   const hasThemePreference = (): boolean => {
-    const saved = localStorage.getItem('timer-settings')
-    if (!saved) return false
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (!saved) {
+      return false
+    }
     try {
       const loaded = JSON.parse(saved)
       return loaded.theme !== undefined
@@ -173,14 +162,14 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const removeCustomPreset = (id: string) => {
     if (settings.value.customPresets) {
-      settings.value.customPresets = settings.value.customPresets.filter(p => p.id !== id)
+      settings.value.customPresets = settings.value.customPresets.filter((p) => p.id !== id)
       saveSettings()
     }
   }
 
   const updateCustomPreset = (id: string, preset: Partial<TimerPreset>) => {
     if (settings.value.customPresets) {
-      const index = settings.value.customPresets.findIndex(p => p.id === id)
+      const index = settings.value.customPresets.findIndex((p) => p.id === id)
       if (index !== -1) {
         settings.value.customPresets[index] = { ...settings.value.customPresets[index], ...preset }
         saveSettings()
@@ -190,7 +179,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const updateDefaultPreset = (id: string, preset: Partial<TimerPreset>) => {
     if (settings.value.defaultPresets) {
-      const index = settings.value.defaultPresets.findIndex(p => p.id === id)
+      const index = settings.value.defaultPresets.findIndex((p) => p.id === id)
       if (index !== -1) {
         settings.value.defaultPresets[index] = { ...settings.value.defaultPresets[index], ...preset }
         saveSettings()
@@ -283,4 +272,3 @@ export const useSettingsStore = defineStore('settings', () => {
     importSettings,
   }
 })
-

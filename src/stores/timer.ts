@@ -1,5 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { getStorageItem, setStorageItem } from '../utils/safeStorage'
+import {
+  MAX_HOURS,
+  MAX_MINUTES,
+  MAX_SECONDS,
+  STATE_SAVE_INTERVAL_SECONDS,
+  STORAGE_DEBOUNCE_MS,
+  TICK_INTERVAL_MS,
+} from '../utils/constants'
 
 export interface TimerState {
   tabId: string
@@ -10,17 +19,16 @@ export interface TimerState {
   isPaused: boolean
   remainingSeconds: number
   initialSeconds: number
-  startTime: number | null // Timestamp when timer started
-  pausedAt: number | null // Timestamp when paused
-  pausedRemaining: number | null // Remaining seconds when paused
-  timerFinishedWhileInactive?: boolean // Flag to indicate timer finished while tab was inactive
-  label?: string // Label for the timer
+  startTime: number | null
+  pausedAt: number | null
+  pausedRemaining: number | null
+  timerFinishedWhileInactive?: boolean
+  label?: string
 }
 
 const STORAGE_KEY = 'timer-state'
 const TAB_ID_KEY = 'timer-tab-id'
 
-// Generate a unique tab ID
 const getTabId = (): string => {
   let tabId = sessionStorage.getItem(TAB_ID_KEY)
   if (!tabId) {
@@ -45,17 +53,9 @@ export const useTimerStore = defineStore('timer', () => {
   const timerFinishedWhileInactive = ref(false)
   const label = ref<string>('')
 
-  // BroadcastChannel for cross-tab communication (optional, for future features)
-  let broadcastChannel: BroadcastChannel | null = null
-  if (typeof BroadcastChannel !== 'undefined') {
-    broadcastChannel = new BroadcastChannel('timer-sync')
-    broadcastChannel.onmessage = (_event) => {
-      // Handle cross-tab messages if needed in the future
-      // For now, we keep tabs independent
-    }
-  }
+  let intervalId: number | null = null
+  let saveTimeout: number | null = null
 
-  // Save current state to localStorage
   const saveState = () => {
     const state: TimerState = {
       tabId: tabId.value,
@@ -72,69 +72,82 @@ export const useTimerStore = defineStore('timer', () => {
       timerFinishedWhileInactive: timerFinishedWhileInactive.value,
       label: label.value || undefined,
     }
-    localStorage.setItem(`${STORAGE_KEY}-${tabId.value}`, JSON.stringify(state))
+    setStorageItem(`${STORAGE_KEY}-${tabId.value}`, state)
   }
 
-  // Load state from localStorage
+  const debouncedSaveState = () => {
+    if (saveTimeout !== null) {
+      clearTimeout(saveTimeout)
+    }
+    saveTimeout = window.setTimeout(() => {
+      saveState()
+    }, STORAGE_DEBOUNCE_MS)
+  }
+
+  const startTicking = () => {
+    if (intervalId !== null) {
+      return
+    }
+    intervalId = window.setInterval(() => {
+      tick()
+    }, TICK_INTERVAL_MS)
+  }
+
+  const stopTicking = () => {
+    if (intervalId !== null) {
+      clearInterval(intervalId)
+      intervalId = null
+    }
+  }
+
   const loadState = (): boolean => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}-${tabId.value}`)
-    if (!saved) return false
+    const state = getStorageItem<TimerState | null>(`${STORAGE_KEY}-${tabId.value}`, null)
+    if (!state) {
+      return false
+    }
 
-    try {
-      const state: TimerState = JSON.parse(saved)
-      
-      // Restore basic state
-      hours.value = state.hours || 0
-      minutes.value = state.minutes || 0
-      seconds.value = state.seconds || 0
-      initialSeconds.value = state.initialSeconds || 0
-      isPaused.value = state.isPaused || false
-      startTime.value = state.startTime
-      pausedAt.value = state.pausedAt
-      pausedRemaining.value = state.pausedRemaining
-      timerFinishedWhileInactive.value = state.timerFinishedWhileInactive || false
-      label.value = state.label || ''
+    hours.value = state.hours || 0
+    minutes.value = state.minutes || 0
+    seconds.value = state.seconds || 0
+    initialSeconds.value = state.initialSeconds || 0
+    isPaused.value = state.isPaused || false
+    startTime.value = state.startTime ?? null
+    pausedAt.value = state.pausedAt ?? null
+    pausedRemaining.value = state.pausedRemaining ?? null
+    timerFinishedWhileInactive.value = state.timerFinishedWhileInactive || false
+    label.value = state.label || ''
 
-      // If timer was running, calculate remaining time based on elapsed time
-      if (state.isRunning && !state.isPaused && state.startTime) {
-        const now = Date.now()
-        const elapsed = Math.floor((now - state.startTime) / 1000)
-        const calculatedRemaining = state.initialSeconds - elapsed
-        
-        if (calculatedRemaining > 0) {
-          remainingSeconds.value = calculatedRemaining
-          isRunning.value = true
-          timerFinishedWhileInactive.value = false
-          return true // Timer should continue running
-        } else {
-          // Timer expired while page was closed
-          remainingSeconds.value = 0
-          isRunning.value = false
-          isPaused.value = false
-          timerFinishedWhileInactive.value = true
-          saveState() // Save the state with the flag set
-          return false
-        }
-      } else if (state.isPaused && state.pausedRemaining !== null) {
-        // Timer was paused
-        remainingSeconds.value = state.pausedRemaining
-        isRunning.value = false
-        isPaused.value = true
-        return false
+    if (state.isRunning && !state.isPaused && state.startTime) {
+      const now = Date.now()
+      const elapsed = Math.floor((now - state.startTime) / 1000)
+      const calculatedRemaining = state.initialSeconds - elapsed
+
+      if (calculatedRemaining > 0) {
+        remainingSeconds.value = calculatedRemaining
+        isRunning.value = true
+        timerFinishedWhileInactive.value = false
+        return true
       } else {
-        // Timer was stopped
-        remainingSeconds.value = state.remainingSeconds || 0
+        remainingSeconds.value = 0
         isRunning.value = false
         isPaused.value = false
+        timerFinishedWhileInactive.value = true
+        saveState()
         return false
       }
-    } catch (e) {
-      console.error('Failed to load timer state', e)
+    } else if (state.isPaused && state.pausedRemaining !== null) {
+      remainingSeconds.value = state.pausedRemaining
+      isRunning.value = false
+      isPaused.value = true
+      return false
+    } else {
+      remainingSeconds.value = state.remainingSeconds || 0
+      isRunning.value = false
+      isPaused.value = false
       return false
     }
   }
 
-  // Clear state for this tab
   const clearState = () => {
     localStorage.removeItem(`${STORAGE_KEY}-${tabId.value}`)
     hours.value = 0
@@ -151,13 +164,11 @@ export const useTimerStore = defineStore('timer', () => {
     label.value = ''
   }
 
-  // Clear the finished indicator
   const clearFinishedIndicator = () => {
     timerFinishedWhileInactive.value = false
     saveState()
   }
 
-  // Update time display from remaining seconds
   const updateTimeFromRemaining = () => {
     const total = remainingSeconds.value
     hours.value = Math.floor(total / 3600)
@@ -166,10 +177,11 @@ export const useTimerStore = defineStore('timer', () => {
     seconds.value = remaining % 60
   }
 
-  // Start timer
   const start = () => {
     const total = hours.value * 3600 + minutes.value * 60 + seconds.value
-    if (total === 0) return
+    if (total === 0) {
+      return
+    }
 
     initialSeconds.value = total
     remainingSeconds.value = total
@@ -180,36 +192,39 @@ export const useTimerStore = defineStore('timer', () => {
     pausedRemaining.value = null
     timerFinishedWhileInactive.value = false
     saveState()
+    startTicking()
   }
 
-  // Pause timer
   const pause = () => {
-    if (!isRunning.value) return
-    
+    if (!isRunning.value) {
+      return
+    }
+
     isPaused.value = true
     isRunning.value = false
     pausedAt.value = Date.now()
     pausedRemaining.value = remainingSeconds.value
     startTime.value = null
+    stopTicking()
     saveState()
   }
 
-  // Resume timer
   const resume = () => {
-    if (!isPaused.value || pausedRemaining.value === null) return
+    if (!isPaused.value || pausedRemaining.value === null) {
+      return
+    }
 
     isPaused.value = false
     isRunning.value = true
     remainingSeconds.value = pausedRemaining.value
-    // Calculate startTime so that elapsed time matches the paused duration
     const elapsed = initialSeconds.value - pausedRemaining.value
     startTime.value = Date.now() - elapsed * 1000
     pausedAt.value = null
     pausedRemaining.value = null
     saveState()
+    startTicking()
   }
 
-  // Stop timer
   const stop = () => {
     isRunning.value = false
     isPaused.value = false
@@ -217,10 +232,10 @@ export const useTimerStore = defineStore('timer', () => {
     pausedAt.value = null
     pausedRemaining.value = null
     timerFinishedWhileInactive.value = false
+    stopTicking()
     saveState()
   }
 
-  // Reset timer
   const reset = () => {
     stop()
     hours.value = 0
@@ -232,60 +247,49 @@ export const useTimerStore = defineStore('timer', () => {
     saveState()
   }
 
-  // Set label
   const setLabel = (newLabel: string) => {
     label.value = newLabel.trim()
-    saveState()
+    debouncedSaveState()
   }
 
-  // Update remaining seconds (called by interval)
   const tick = () => {
     if (isRunning.value && !isPaused.value && startTime.value) {
       const now = Date.now()
       const elapsed = Math.floor((now - startTime.value) / 1000)
       const calculatedRemaining = initialSeconds.value - elapsed
-      
+
       if (calculatedRemaining > 0) {
         remainingSeconds.value = calculatedRemaining
         updateTimeFromRemaining()
-        // Save state every 5 seconds to avoid too frequent writes
-        if (elapsed % 5 === 0) {
+        if (elapsed % STATE_SAVE_INTERVAL_SECONDS === 0) {
           saveState()
         }
       } else {
-        // Timer finished
         remainingSeconds.value = 0
         stop()
-        // Always set the flag when timer finishes
         timerFinishedWhileInactive.value = true
         saveState()
         updateTimeFromRemaining()
-        return true // Signal that timer finished
+        return true
       }
     }
     return false
   }
 
-  // Set time values
   const setTime = (h: number, m: number, s: number) => {
-    hours.value = h
-    minutes.value = m
-    seconds.value = s
-    // Clear finished indicator when time is changed (only if not running)
+    hours.value = Math.max(0, Math.min(MAX_HOURS, h))
+    minutes.value = Math.max(0, Math.min(MAX_MINUTES, m))
+    seconds.value = Math.max(0, Math.min(MAX_SECONDS, s))
     if (!isRunning.value) {
       timerFinishedWhileInactive.value = false
     }
-    saveState()
+    debouncedSaveState()
   }
 
-  // Add time
   const addTime = (additionalSeconds: number) => {
     if (isRunning.value && !isPaused.value) {
-      // Adjust remaining time
       remainingSeconds.value = Math.max(0, remainingSeconds.value + additionalSeconds)
-      // Extend initial seconds by the same amount (to extend duration)
       initialSeconds.value = initialSeconds.value + additionalSeconds
-      // startTime stays the same - we're extending the duration
       updateTimeFromRemaining()
     } else {
       const total = hours.value * 3600 + minutes.value * 60 + seconds.value + additionalSeconds
@@ -299,20 +303,20 @@ export const useTimerStore = defineStore('timer', () => {
         minutes.value = Math.floor(remaining / 60)
         seconds.value = remaining % 60
       }
-      // Clear finished indicator when time is changed (only if not running)
-      timerFinishedWhileInactive.value = false
+      if (!isRunning.value) {
+        timerFinishedWhileInactive.value = false
+      }
     }
-    saveState()
+    debouncedSaveState()
   }
 
-  // Load state on initialization
   const shouldResume = loadState()
   if (shouldResume) {
     updateTimeFromRemaining()
+    startTicking()
   }
 
   return {
-    // State
     tabId,
     hours,
     minutes,
@@ -326,8 +330,6 @@ export const useTimerStore = defineStore('timer', () => {
     pausedRemaining,
     timerFinishedWhileInactive,
     label,
-    
-    // Methods
     start,
     pause,
     resume,
@@ -338,10 +340,12 @@ export const useTimerStore = defineStore('timer', () => {
     addTime,
     setLabel,
     saveState,
+    debouncedSaveState,
     loadState,
     clearState,
     clearFinishedIndicator,
     updateTimeFromRemaining,
+    startTicking,
+    stopTicking,
   }
 })
-
