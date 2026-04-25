@@ -253,7 +253,6 @@
           <label class="block text-xs font-semibold mb-1.5 text-foreground/70 uppercase tracking-wide text-center">Hours</label>
           <div class="relative flex flex-col">
             <button
-              @click="adjustHours(1)"
               @mousedown.prevent="startRepeat('hours', 1)"
               @mouseup="stopRepeat"
               @mouseleave="stopRepeat"
@@ -277,7 +276,6 @@
               @input="updateTime"
             />
             <button
-              @click="adjustHours(-1)"
               @mousedown.prevent="startRepeat('hours', -1)"
               @mouseup="stopRepeat"
               @mouseleave="stopRepeat"
@@ -299,7 +297,6 @@
           <label class="block text-xs font-semibold mb-1.5 text-foreground/70 uppercase tracking-wide text-center">Minutes</label>
           <div class="relative flex flex-col">
             <button
-              @click="adjustMinutes(1)"
               @mousedown.prevent="startRepeat('minutes', 1)"
               @mouseup="stopRepeat"
               @mouseleave="stopRepeat"
@@ -323,7 +320,6 @@
               @input="updateTime"
             />
             <button
-              @click="adjustMinutes(-1)"
               @mousedown.prevent="startRepeat('minutes', -1)"
               @mouseup="stopRepeat"
               @mouseleave="stopRepeat"
@@ -345,7 +341,6 @@
           <label class="block text-xs font-semibold mb-1.5 text-foreground/70 uppercase tracking-wide text-center">Seconds</label>
           <div class="relative flex flex-col">
             <button
-              @click="adjustSeconds(1)"
               @mousedown.prevent="startRepeat('seconds', 1)"
               @mouseup="stopRepeat"
               @mouseleave="stopRepeat"
@@ -369,7 +364,6 @@
               @input="updateTime"
             />
             <button
-              @click="adjustSeconds(-1)"
               @mousedown.prevent="startRepeat('seconds', -1)"
               @mouseup="stopRepeat"
               @mouseleave="stopRepeat"
@@ -807,11 +801,6 @@ const setPreset = (presetSeconds: number) => {
 const handleKeyDown = (e: KeyboardEvent) => {
   // Don't handle shortcuts when typing in inputs
   if (e.target instanceof HTMLInputElement) {
-    // Allow arrow keys in inputs
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-      e.preventDefault()
-      handleTimeAdjustment(e.key)
-    }
     return
   }
 
@@ -885,6 +874,13 @@ const start = () => {
   stopRepeatingBells() // Stop any repeating bells from previous timer
   timerStore.start()
   
+  historyStore.addEntry({
+    type: 'timer',
+    status: 'started',
+    duration: initialSeconds.value,
+    label: label.value || undefined,
+  })
+
   // Start interval to tick the timer
   if (intervalId) clearInterval(intervalId)
   intervalId = window.setInterval(() => {
@@ -893,6 +889,7 @@ const start = () => {
         playNotification()
         historyStore.addEntry({
           type: 'timer',
+          status: 'completed',
           duration: initialSeconds.value,
           label: label.value || undefined,
         })
@@ -923,6 +920,7 @@ const resume = () => {
       playNotification()
       historyStore.addEntry({
         type: 'timer',
+        status: 'completed',
         duration: initialSeconds.value,
         label: label.value || undefined,
       })
@@ -1021,6 +1019,7 @@ onMounted(() => {
         playNotification()
         historyStore.addEntry({
           type: 'timer',
+          status: 'completed',
           duration: initialSeconds.value,
           label: label.value || undefined,
         })
@@ -1047,6 +1046,7 @@ onMounted(() => {
               playNotification()
               historyStore.addEntry({
                 type: 'timer',
+                status: 'completed',
                 duration: initialSeconds.value,
                 label: label.value || undefined,
               })
@@ -1062,6 +1062,7 @@ onMounted(() => {
           playNotification()
           historyStore.addEntry({
             type: 'timer',
+            status: 'completed',
             duration: initialSeconds.value,
             label: label.value || undefined,
           })
@@ -1089,6 +1090,7 @@ onMounted(() => {
                 }
                 historyStore.addEntry({
                   type: 'timer',
+                  status: 'completed',
                   duration: initialSeconds.value,
                   label: label.value || undefined,
                 })
