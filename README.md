@@ -4,14 +4,14 @@ A modern timer web application built with Vue.js 3, TypeScript, and Tailwind CSS
 
 ## Features
 
-- ⏱️ **Timer**: Set custom hours, minutes, and seconds with circular progress indicator
-- 🎨 **Theme Support**: Light and dark mode
-- 🔊 **Sound Options**: Enable/disable sounds and silent mode when tab is inactive
-- 📱 **Full Screen**: Toggle fullscreen mode
-- 📊 **History**: Track your timer sessions
-- 💾 **Backup & Restore**: Export and import your settings and history
-- 🔔 **Notifications**: Browser notifications when timer completes
-- ➕ **Quick Add**: Add 10s or 30s to timer quickly
+- **Timer**: Set custom hours, minutes, and seconds with circular progress indicator
+- **Theme Support**: Light and dark mode
+- **Sound Options**: Enable/disable sounds and silent mode when tab is inactive
+- **Full Screen**: Toggle fullscreen mode
+- **History**: Track your timer sessions
+- **Backup & Restore**: Export and import your settings and history
+- **Notifications**: Browser notifications when timer completes
+- **Quick Add**: Add 10s or 30s to timer quickly
 
 ## Tech Stack
 
