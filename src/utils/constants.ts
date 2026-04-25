@@ -1,0 +1,11 @@
+export const MAX_HISTORY_ENTRIES = 100
+export const STATE_SAVE_INTERVAL_SECONDS = 5
+export const REPEAT_BUTTON_DELAY_MS = 500
+export const REPEAT_BUTTON_INTERVAL_MS = 100
+export const TICK_INTERVAL_MS = 1000
+export const TAB_TITLE_UPDATE_INTERVAL_MS = 100
+export const CIRCUMFERENCE = 2 * Math.PI * 116
+export const MAX_HOURS = 23
+export const MAX_MINUTES = 59
+export const MAX_SECONDS = 59
+export const STORAGE_DEBOUNCE_MS = 500
