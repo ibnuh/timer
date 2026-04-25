@@ -24,10 +24,21 @@
           class="flex justify-between items-center p-3 bg-secondary rounded-md hover:bg-secondary/90 transition-colors border border-border/50"
         >
           <div class="flex items-center gap-3 flex-1 min-w-0">
-            <div class="w-2 h-2 rounded-full flex-shrink-0 bg-primary" />
+            <div
+              class="w-2 h-2 rounded-full flex-shrink-0"
+              :class="entry.status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500'"
+            />
             <div class="min-w-0 flex-1">
-              <div class="text-sm font-semibold capitalize truncate text-foreground">
-                {{ entry.label || 'Timer' }}
+              <div class="flex items-center gap-2">
+                <span
+                  class="text-xs font-medium px-1.5 py-0.5 rounded"
+                  :class="entry.status === 'completed' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'"
+                >
+                  {{ entry.status }}
+                </span>
+                <div class="text-sm font-semibold capitalize truncate text-foreground">
+                  {{ entry.label || 'Timer' }}
+                </div>
               </div>
               <div class="text-xs text-foreground/70 truncate mt-0.5">
                 {{ formatDateShort(entry.timestamp) }}

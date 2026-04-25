@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+export type HistoryEntryStatus = 'started' | 'completed'
+
 export interface HistoryEntry {
   id: string
   type: 'timer'
+  status: HistoryEntryStatus
   duration: number
   timestamp: number
   label?: string
@@ -16,7 +19,11 @@ export const useHistoryStore = defineStore('history', () => {
     const saved = localStorage.getItem('timer-history')
     if (saved) {
       try {
-        entries.value = JSON.parse(saved)
+        const parsed = JSON.parse(saved)
+        entries.value = parsed.map((entry: HistoryEntry) => ({
+          ...entry,
+          status: entry.status || 'completed',
+        }))
       } catch (e) {
         console.error('Failed to load history', e)
       }
